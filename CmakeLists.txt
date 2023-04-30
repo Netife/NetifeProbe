@@ -1,0 +1,37 @@
+# !powershell
+# cmake -B build
+# cmake --build .\build\
+# .\bin\NetifeProbe.exe
+
+cmake_minimum_required(VERSION 3.23)
+project(NetifeProbe)
+
+add_definitions("-DUNICODE" "-D_UNICODE")
+
+include_directories(./lib)
+link_directories(./lib)
+
+add_executable(NetifeProbe main.cpp PacketDivert.h PacketDivert.cpp ProxyServer.h ProxyServer.cpp)
+target_link_libraries(NetifeProbe WinDivert.lib Ws2_32 shlwapi)
+
+
+
+# add_custom_command(TARGET ${PROJECT_NAME}
+# POST_BUILD COMMAND ${CMAKE_COMMAND} -E
+# make_directory ${CMAKE_CURRENT_SOURCE_DIR}/bin
+# )
+
+
+add_custom_command(TARGET ${PROJECT_NAME}
+POST_BUILD COMMAND ${CMAKE_COMMAND} -E
+copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/dependency
+${CMAKE_CURRENT_BINARY_DIR}/Debug
+)
+
+add_custom_command(TARGET ${PROJECT_NAME}
+POST_BUILD COMMAND ${CMAKE_COMMAND} -E
+copy_directory ${CMAKE_CURRENT_BINARY_DIR}/Debug/
+${CMAKE_CURRENT_SOURCE_DIR}/bin
+)
+
+
