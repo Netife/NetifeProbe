@@ -278,6 +278,10 @@ void PacketDivert::handleFlow() {
 //	 		printf("%s:%u\n", addrStr, iter->Flow.RemotePort);
 //	 		fflush(stdout);
 	 	}
+
+         // 清空快照，不累计
+
+         addrArray.clear();
 	 	Sleep(1000);
 	 }
 
