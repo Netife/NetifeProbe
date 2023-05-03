@@ -126,13 +126,15 @@ void ProxyServer::startServer(int maxWaitList, UINT altPort,
 
 				bool isFinished = false;
 				thread([=, &isFinished]()->void {
-					transDataInner(clientSocketFD, newClientSocketFD, false,originClientPort);
+					transDataInner(clientSocketFD, newClientSocketFD, false,originClientPort,
+                                   fakerServerSocketAddr.sin_addr);
 					// 向外的数据包
 
 					isFinished = true;
 					// 线程结束
 					}).detach();
-					transDataInner(newClientSocketFD, clientSocketFD, true,originClientPort);
+					transDataInner(newClientSocketFD, clientSocketFD, true,originClientPort,
+                                   fakerServerSocketAddr.sin_addr);
 					// 向里的数据包
 
 					while (!isFinished) {
@@ -145,11 +147,12 @@ void ProxyServer::startServer(int maxWaitList, UINT altPort,
 }
 
 int ProxyServer::transDataInner(SOCKET getDataSocketFD, SOCKET sendDataSocketFD,
-								BOOL inbound, UINT oriClientPort)
+								BOOL inbound, UINT oriClientPort, struct in_addr serverAddr)
 {
 
+
 	UINT32 curPID = 0;
-    cout << " originClientPort = "<<oriClientPort <<endl;
+//    cout << " originClientPort = "<<oriClientPort <<endl;
 
     int count = 0;
 	if (mapPortWithPID != nullptr)
@@ -207,7 +210,7 @@ int ProxyServer::transDataInner(SOCKET getDataSocketFD, SOCKET sendDataSocketFD,
 		size_t lenOfNewData = 0;
 		char *newDataBuf = nullptr;
 		// 引用表示传入的值是会被修改的
-		commitData(buf, lenOfRevPacket, curPID, &newDataBuf, &lenOfNewData);
+		commitData(buf, lenOfRevPacket, curPID, serverAddr, &newDataBuf, &lenOfNewData);
 
 		// for (auto i = 0; i < lenOfRevPacket; i++)
 		//{
@@ -242,11 +245,22 @@ int ProxyServer::transDataInner(SOCKET getDataSocketFD, SOCKET sendDataSocketFD,
 /// @param lenOfOriData 原始数据长度
 /// @param newData 新数据（修改）
 /// @param lenOfNewData 新数据长度（修改）
+/// @param pid pid
 /// @return 状态
-int ProxyServer::commitData(const char *const originData, size_t lenOfOriData, UINT32 pid, char **newData, size_t *lenOfNewData)
+int ProxyServer::commitData(const char *const originData, const size_t lenOfOriData,
+                            const UINT32 pid, struct in_addr serverAddr,
+                            char **newData, size_t *lenOfNewData)
 {
 
-	cout << "catched packet pid = " << pid << endl;
+    auto serverIp = serverAddr.S_un.S_un_b;
+    cout << "remote server ip is: "
+         << (int)serverIp.s_b1 << "."
+         << (int)serverIp.s_b2 << "."
+         << (int)serverIp.s_b3 << "."
+         << (int)serverIp.s_b4 << "\t"
+         << endl;
+
+	cout << "local application pid is: " << pid << endl;
 	*lenOfNewData = lenOfOriData;
 	*newData = new char[*lenOfNewData]{};
 	for (auto i = 0; i < *lenOfNewData; i++)
