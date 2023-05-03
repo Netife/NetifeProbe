@@ -44,7 +44,7 @@ int main()
 //				ipHeader->SrcAddr = oriDstAddr;
 
 
-                // cout << "tcpHeader->SrcPort: "<< tcpHeader->SrcPort<<endl;
+                cout << "tcpHeader->SrcPort: "<< tcpHeader->SrcPort<<endl;
                 swap(ipHeader->SrcAddr,ipHeader->DstAddr);
 				addr.Outbound = FALSE;
 			}
@@ -118,7 +118,7 @@ int main()
 
 		
 		for (auto elem:mapPortPID){
-			cout << elem.first << "->"<<elem.second <<endl;
+//			cout << elem.first << "->"<<elem.second <<endl;
 		}
 		Sleep(5000);
 	}

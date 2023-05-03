@@ -23,7 +23,8 @@ PacketDivert::~PacketDivert()
 
 /// @brief 启动抓包程序
 /// @param dealFunc 循环处理函数
-void PacketDivert::startDivert(std::function<void(PWINDIVERT_IPHDR&, PWINDIVERT_TCPHDR&, WINDIVERT_ADDRESS&)> dealFunc)
+void
+PacketDivert::startDivert(const std::function<void(PWINDIVERT_IPHDR&, PWINDIVERT_TCPHDR&, WINDIVERT_ADDRESS&)>& dealFunc)
 {
 
 	if (0 != modeFlag) {
@@ -38,7 +39,7 @@ void PacketDivert::startDivert(std::function<void(PWINDIVERT_IPHDR&, PWINDIVERT_
 		if (GetLastError() == ERROR_INVALID_PARAMETER &&
 			!WinDivertHelperCompileFilter(
 				packetFilter, WINDIVERT_LAYER_FLOW,
-				NULL, 0, &err_str, NULL))
+				nullptr, 0, &err_str, nullptr))
 		{
 			fprintf(stderr,
 				"error: invalid filter \"%s\"\n",
@@ -66,9 +67,9 @@ void PacketDivert::startDivert(std::function<void(PWINDIVERT_IPHDR&, PWINDIVERT_
 			continue;
 		}
 
-		WinDivertHelperParsePacket(packet, packetLength, &ipHeader, NULL, NULL,
-			NULL, NULL, &tcpHeader, NULL, NULL, NULL, NULL, NULL);
-		if (ipHeader == NULL || tcpHeader == NULL)
+		WinDivertHelperParsePacket(packet, packetLength, &ipHeader, nullptr, nullptr,
+			nullptr, nullptr, &tcpHeader, nullptr, nullptr, nullptr, nullptr, nullptr);
+		if (ipHeader == nullptr || tcpHeader == nullptr)
 		{
 			cerr << "failed to parse packet : " << GetLastError() << endl;
 			continue;
@@ -77,7 +78,7 @@ void PacketDivert::startDivert(std::function<void(PWINDIVERT_IPHDR&, PWINDIVERT_
 		dealFunc(ipHeader, tcpHeader, addr);
 
 		WinDivertHelperCalcChecksums(packet, packetLength, &addr, 0);
-		if (!WinDivertSend(handle, packet, packetLength, NULL, &addr))
+		if (!WinDivertSend(handle, packet, packetLength, nullptr, &addr))
 		{
 			cerr << "failed to send packet :" << GetLastError() << endl;
 			continue;
@@ -85,8 +86,8 @@ void PacketDivert::startDivert(std::function<void(PWINDIVERT_IPHDR&, PWINDIVERT_
 	}
 }
 
-
-void PacketDivert::startDivert(std::function<void(WINDIVERT_ADDRESS)> dealFunc,	
+void
+PacketDivert::startDivert(const std::function<void(WINDIVERT_ADDRESS&)>& dealFunc,
 std::map<UINT,UINT32>* mapPortPID) {
 
 	if (mapPortPID!=nullptr){
@@ -106,7 +107,7 @@ std::map<UINT,UINT32>* mapPortPID) {
 		if (GetLastError() == ERROR_INVALID_PARAMETER &&
 			!WinDivertHelperCompileFilter(
 				packetFilter, WINDIVERT_LAYER_FLOW,
-				NULL, 0, &err_str, NULL))
+				nullptr, 0, &err_str, nullptr))
 		{
 			fprintf(stderr,
 				"error: invalid filter \"%s\"\n",
@@ -128,7 +129,7 @@ std::map<UINT,UINT32>* mapPortPID) {
 		WINDIVERT_ADDRESS addr;
 		while (true)
 		{
-			if (!WinDivertRecv(handle, NULL, 0, NULL, &addr))
+			if (!WinDivertRecv(handle, nullptr, 0, nullptr, &addr))
 			{
 				fprintf(stderr, "failed to read packet (%lu)\n", GetLastError());
 				continue;
@@ -169,7 +170,8 @@ std::map<UINT,UINT32>* mapPortPID) {
 }
 
 
-void PacketDivert::handleFlow() {
+void
+PacketDivert::handleFlow() {
 
 	HANDLE process, console = GetStdHandle(STD_OUTPUT_HANDLE);
 	WCHAR path[MAX_PATH + 1];
