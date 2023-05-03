@@ -10,6 +10,8 @@ using namespace std;
 #pragma comment(lib, "Ws2_32.lib")
 #pragma comment(lib,"shlwapi.lib")
 
+
+static map<UINT,UINT32> mapPortPID;
 int main()
 {
 	char filter[256]{};
@@ -25,31 +27,43 @@ int main()
 
 
 	auto dealFunc = [&](PWINDIVERT_IPHDR& ipHeader, PWINDIVERT_TCPHDR& tcpHeader, WINDIVERT_ADDRESS& addr) {
+//        if(addr.Impostor){
+//            printf("**************");
+//        }
 
 		if (addr.Outbound) // 向外部主机发送的数据包
 		{
 			if (tcpHeader->DstPort == htons(serverPort))
 			{
+//				cout << "&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&\n" << ntohs(tcpHeader->SrcPort) <<endl;
 				// Reflect: PORT ---> PROXY
-				UINT32 oriDstAddr = ipHeader->DstAddr;
+//				UINT32 oriDstAddr = ipHeader->DstAddr;
 				tcpHeader->DstPort = htons(proxyPort);
-				ipHeader->DstAddr = ipHeader->SrcAddr;
-				ipHeader->SrcAddr = oriDstAddr;
+//				ipHeader->DstAddr = ipHeader->SrcAddr;
+//				ipHeader->SrcAddr = oriDstAddr;
+
+                swap(ipHeader->SrcAddr,ipHeader->DstAddr);
 				addr.Outbound = FALSE;
 			}
 			else if (tcpHeader->SrcPort == htons(proxyPort))
 			{
 				// Reflect: PROXY ---> PORT
-				UINT32 oriDstAddr = ipHeader->DstAddr;
+//				UINT32 oriDstAddr = ipHeader->DstAddr;
 				tcpHeader->SrcPort = htons(serverPort);
-				ipHeader->DstAddr = ipHeader->SrcAddr;
-				ipHeader->SrcAddr = oriDstAddr;
+//				ipHeader->DstAddr = ipHeader->SrcAddr;
+//				ipHeader->SrcAddr = oriDstAddr;
+
+
+                swap(ipHeader->SrcAddr,ipHeader->DstAddr);
+
+
 				addr.Outbound = FALSE;
 			}
 			else if (tcpHeader->DstPort == htons(altPort))
 			{
 				// Redirect: ALT ---> PORT
 				tcpHeader->DstPort = htons(serverPort);
+
 			}
 		}
 		else
@@ -58,6 +72,7 @@ int main()
 			{
 				// Redirect: PORT ---> ALT
 				tcpHeader->SrcPort = htons(altPort);
+
 			}
 		}
 	};
@@ -82,7 +97,7 @@ int main()
 	bool two = false;
 	bool three = false;
 	thread([&]() {
-		proxyServer.startServer(16, altPort);
+		proxyServer.startServer(16, altPort,&mapPortPID);
 		one = true;
 	}).detach();
 
@@ -92,12 +107,17 @@ int main()
 	}).detach();
 
 	thread([&]() {
-		(new PacketDivert("tcp", WINDIVERT_LAYER_FLOW, WINDIVERT_FLAG_SNIFF | WINDIVERT_FLAG_RECV_ONLY))->startDivert([](WINDIVERT_ADDRESS) {});
+		(new PacketDivert("tcp and localPort", WINDIVERT_LAYER_FLOW, WINDIVERT_FLAG_SNIFF | WINDIVERT_FLAG_RECV_ONLY))->startDivert([](WINDIVERT_ADDRESS) {},&mapPortPID);
 		three = true;
 		}).detach();
 
 	while (one == false || two == false || three == false) {
-		Sleep(100);
+
+		
+//		for (auto elem:mapPortPID){
+//			cout << elem.first << "->"<<elem.second <<endl;
+//		}
+		Sleep(5000);
 	}
 
 	return 0;
