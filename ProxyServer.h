@@ -20,7 +20,7 @@ private:
 	std::mutex myThreadMutex;
 
 public:
-	ProxyServer(UINT proxyPort);
+	explicit ProxyServer(UINT proxyPort);
 	~ProxyServer();
 
 	void startServer(int maxWaitList, UINT altPort,	std::map<UINT,UINT32>* mapPortPID = nullptr);

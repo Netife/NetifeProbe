@@ -49,7 +49,8 @@ ProxyServer::~ProxyServer()
 	cout << "endl" << endl;
 }
 
-void ProxyServer::startServer(int maxWaitList, UINT altPort,
+void
+ProxyServer::startServer(int maxWaitList, UINT altPort,
 							  std::map<UINT, UINT32> *mapPortPID)
 {
 	if (mapPortPID != nullptr)
@@ -70,7 +71,7 @@ void ProxyServer::startServer(int maxWaitList, UINT altPort,
 
 		cout << "server port: " << ntohs(serverSocketAddr.sin_port) << endl
 			 << endl;
-		struct sockaddr_in clientSocketAddr; // = serverSocketAddr; // 连接代理服务器的socket，但是是被修改后的
+		struct sockaddr_in clientSocketAddr{}; // = serverSocketAddr; // 连接代理服务器的socket，但是是被修改后的
 		int clientAddrLen = sizeof(serverSocketAddr);
 
 		SOCKET clientSocketFD = accept(serverSocketFD, (SOCKADDR *)&clientSocketAddr, &clientAddrLen);
@@ -106,8 +107,8 @@ void ProxyServer::startServer(int maxWaitList, UINT altPort,
 				}
 
 				// 配置服务器端属性，这里和目标服务器位置不同，但可以通过WinDivert重定向
-				struct sockaddr_in fakerServerSocketAddr;
-				memset(&fakerServerSocketAddr, 0, sizeof(fakerServerSocketAddr));
+				struct sockaddr_in fakerServerSocketAddr{};
+//				memset(&fakerServerSocketAddr, 0, sizeof(fakerServerSocketAddr));
 
 				fakerServerSocketAddr.sin_family = AF_INET;
 				fakerServerSocketAddr.sin_port = htons(altPort);
@@ -146,7 +147,8 @@ void ProxyServer::startServer(int maxWaitList, UINT altPort,
 	}
 }
 
-int ProxyServer::transDataInner(SOCKET getDataSocketFD, SOCKET sendDataSocketFD,
+int
+ProxyServer::transDataInner(SOCKET getDataSocketFD, SOCKET sendDataSocketFD,
 								BOOL inbound, UINT oriClientPort, struct in_addr serverAddr)
 {
 
@@ -164,7 +166,11 @@ int ProxyServer::transDataInner(SOCKET getDataSocketFD, SOCKET sendDataSocketFD,
                 break;
             }
 
-            if (count > 30)break;
+            if (count > 30){
+                cerr << "can not get pid!!" <<endl;
+                exit(-1);
+                break;
+            }
             count ++;
             Sleep(100);
         }
@@ -247,7 +253,8 @@ int ProxyServer::transDataInner(SOCKET getDataSocketFD, SOCKET sendDataSocketFD,
 /// @param lenOfNewData 新数据长度（修改）
 /// @param pid pid
 /// @return 状态
-int ProxyServer::commitData(const char *const originData, const size_t lenOfOriData,
+int
+ProxyServer::commitData(const char *const originData, const size_t lenOfOriData,
                             const UINT32 pid, struct in_addr serverAddr,
                             char **newData, size_t *lenOfNewData)
 {
