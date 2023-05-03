@@ -26,9 +26,12 @@ public:
 	void startServer(int maxWaitList, UINT altPort,	std::map<UINT,UINT32>* mapPortPID = nullptr);
 
 private:
-	int transDataInner(SOCKET getDataSocketFD, SOCKET sendDataSocketFD, BOOL inbound, UINT oriClientPort);
+	int transDataInner(SOCKET getDataSocketFD, SOCKET sendDataSocketFD, BOOL inbound, UINT oriClientPort,
+                       struct in_addr serverAddr);
 
-	int commitData(const char* const originData, size_t lenOfOriData,UINT32 pid, char** newData, size_t* lenOfNewData);
+	int commitData(const char* const originData,const size_t lenOfOriData,
+                   const UINT32 pid, struct in_addr serverAddr,
+                   char** newData, size_t* lenOfNewData);
 
 };
 #endif

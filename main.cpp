@@ -14,6 +14,7 @@ using namespace std;
 static map<UINT,UINT32> mapPortPID;
 int main()
 {
+    ::system("chcp 65001");
 	char filter[256]{};
 	UINT16 serverPort = SERVER_PORT, proxyPort = PROXY_PORT, altPort = ALT_PORT;
 	snprintf(filter, sizeof(filter),
