@@ -45,12 +45,14 @@ private:
 
 public:
 	PacketDivert() = default;
-    explicit PacketDivert(const char* packetFilter, WINDIVERT_LAYER filterLayer = WINDIVERT_LAYER_NETWORK, UINT64 modeFlag = 0);
+    explicit PacketDivert(const char* packetFilter,
+                          WINDIVERT_LAYER filterLayer = WINDIVERT_LAYER_NETWORK, UINT64 modeFlag = 0);
 	~PacketDivert();
 
 	void startDivert(const std::function<void(PWINDIVERT_IPHDR&, PWINDIVERT_TCPHDR&, WINDIVERT_ADDRESS&)>& dealFunc);
 
-	void startDivert(const std::function<void(WINDIVERT_ADDRESS &)> &dealFunc, std::map<UINT,UINT32>* mapPortPID = nullptr);
+	void startDivert(const std::function<void(WINDIVERT_ADDRESS &)> &dealFunc,
+                     std::map<UINT,UINT32>* mapPortPID = nullptr);
 	void handleFlow();
 
 };

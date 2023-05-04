@@ -25,7 +25,8 @@ ProxyServer::ProxyServer(UINT proxyPort)
 
 	// 配置
 	int on = 1;
-	if (setsockopt(serverSocketFD, SOL_SOCKET, SO_REUSEADDR, (const char *)&on, sizeof(int)) == SOCKET_ERROR)
+	if (setsockopt(serverSocketFD, SOL_SOCKET, SO_REUSEADDR,
+                   (const char *)&on, sizeof(int)) == SOCKET_ERROR)
 	{
 		cerr << "failed to re-use address: " << GetLastError() << endl;
 	}
@@ -114,7 +115,9 @@ void ProxyServer::startServer(int maxWaitList, UINT altPort,
 				fakerServerSocketAddr.sin_port = htons(altPort);
 				fakerServerSocketAddr.sin_addr = clientSocketAddr.sin_addr; // 重定向后其实就是真实服务器ip
 
-				if (connect(newClientSocketFD, (SOCKADDR*)&fakerServerSocketAddr, sizeof(fakerServerSocketAddr)) == SOCKET_ERROR)
+				if (connect(newClientSocketFD, (SOCKADDR*)&fakerServerSocketAddr,
+                            sizeof(fakerServerSocketAddr))
+                            == SOCKET_ERROR)
 				{
 					cerr << "failed to connect socket: " << WSAGetLastError() << endl;
 					closesocket(clientSocketFD);
@@ -127,14 +130,16 @@ void ProxyServer::startServer(int maxWaitList, UINT altPort,
 
 				bool isFinished = false;
 				thread([=, &isFinished]()->void {
-					transDataInner(clientSocketFD, newClientSocketFD, false,originClientPort,
+					transDataInner(clientSocketFD,newClientSocketFD,
+                                   false,originClientPort,
                                    fakerServerSocketAddr.sin_addr);
 					// 向外的数据包
 
 					isFinished = true;
 					// 线程结束
 					}).detach();
-					transDataInner(newClientSocketFD, clientSocketFD, true,originClientPort,
+					transDataInner(newClientSocketFD, clientSocketFD,
+                                   true,originClientPort,
                                    fakerServerSocketAddr.sin_addr);
 					// 向里的数据包
 
