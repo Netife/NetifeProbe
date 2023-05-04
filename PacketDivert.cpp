@@ -6,7 +6,9 @@ using namespace std;
 #pragma comment(lib, "Ws2_32.lib")
 
 #define MAX_FLOWS 256
-PacketDivert::PacketDivert(const char *packetFilter, WINDIVERT_LAYER filterLayer, UINT64 modeFlag) : packetFilter(packetFilter), filterLayer(filterLayer), modeFlag(modeFlag)
+PacketDivert::PacketDivert(const char *packetFilter,
+                           WINDIVERT_LAYER filterLayer, UINT64 modeFlag
+                           ) : packetFilter(packetFilter), filterLayer(filterLayer), modeFlag(modeFlag)
 {
 }
 
@@ -22,7 +24,8 @@ PacketDivert::~PacketDivert()
 
 /// @brief 启动抓包程序
 /// @param dealFunc 循环处理函数
-void PacketDivert::startDivert(const std::function<void(PWINDIVERT_IPHDR &, PWINDIVERT_TCPHDR &, WINDIVERT_ADDRESS &)> &dealFunc)
+void PacketDivert::startDivert(
+        const std::function<void(PWINDIVERT_IPHDR &, PWINDIVERT_TCPHDR &, WINDIVERT_ADDRESS &)> &dealFunc)
 {
 
 	if (0 != modeFlag)
@@ -64,8 +67,11 @@ void PacketDivert::startDivert(const std::function<void(PWINDIVERT_IPHDR &, PWIN
 			continue;
 		}
 
-		WinDivertHelperParsePacket(packet, packetLength, &ipHeader, nullptr, nullptr,
-								   nullptr, nullptr, &tcpHeader, nullptr, nullptr, nullptr, nullptr, nullptr);
+		WinDivertHelperParsePacket(packet, packetLength,
+                                   &ipHeader, nullptr, nullptr,
+								   nullptr, nullptr, &tcpHeader,
+                                   nullptr, nullptr, nullptr,
+                                   nullptr, nullptr);
 		if (ipHeader == nullptr || tcpHeader == nullptr)
 		{
 			cerr << "failed to parse packet : " << GetLastError() << endl;
@@ -164,6 +170,10 @@ void PacketDivert::startDivert(const std::function<void(WINDIVERT_ADDRESS &)> &d
 			myThreadMutex.unlock();
 
 			break;
+            default:
+                cerr<<"illegal addr.Event: "<<addr.Event<<endl;
+                exit(-1);
+                break;
 		}
 	}
 }
@@ -171,11 +181,6 @@ void PacketDivert::startDivert(const std::function<void(WINDIVERT_ADDRESS &)> &d
 void PacketDivert::handleFlow()
 {
 
-	HANDLE process, console = GetStdHandle(STD_OUTPUT_HANDLE);
-	WCHAR path[MAX_PATH + 1];
-	char addrStr[INET6_ADDRSTRLEN + 1];
-	WCHAR *filename;
-	DWORD pathLen, i;
 	vector<WINDIVERT_ADDRESS> addrArray;
 	UINT numOfAddr = 0;
 
@@ -197,78 +202,14 @@ void PacketDivert::handleFlow()
 
 		myThreadMutex.unlock();
 
-		//	 	putchar('\n');
-		//	 	SetConsoleTextAttribute(console,
-		//	 		FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
 		for (auto iter = addrArray.begin(); iter != addrArray.end(); iter++)
 		{
-			// 打印流信息到控制台
-			/*
-						printf("%-10d ", iter->Flow.ProcessId);
-
-						process = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE,
-							iter->Flow.ProcessId);
-						pathLen = 0;
-						if (process != nullptr)
-						{
-							pathLen = GetProcessImageFileName(process, path, sizeof(path));
-							CloseHandle(process);
-						}
-						SetConsoleTextAttribute(console, FOREGROUND_RED | FOREGROUND_GREEN);
-						if (pathLen != 0)
-						{
-							filename = PathFindFileName(path);
-							std::wcout << filename;
-						}
-						else if (iter->Flow.ProcessId == 4)
-						{
-							fputs("Windows              ", stdout);
-						}
-						else
-						{
-							fputs("???                  ", stdout);
-						}
-						SetConsoleTextAttribute(console,
-							FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
-						switch (iter->Flow.Protocol)
-						{
-						case IPPROTO_TCP:
-							SetConsoleTextAttribute(console, FOREGROUND_GREEN);
-							printf("TCP    ");
-							break;
-						case IPPROTO_UDP:
-							SetConsoleTextAttribute(console,
-								FOREGROUND_RED | FOREGROUND_GREEN);
-							printf("UDP    ");
-							break;
-						case IPPROTO_ICMP:
-							SetConsoleTextAttribute(console, FOREGROUND_RED);
-							printf("ICMP   ");
-							break;
-						case IPPROTO_ICMPV6:
-							SetConsoleTextAttribute(console, FOREGROUND_RED);
-							printf("ICMPV6 ");
-							break;
-						default:
-							printf("%-6u ", iter->Flow.Protocol);
-							break;
-						}
-						SetConsoleTextAttribute(console,
-							FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
-						WinDivertHelperFormatIPv6Address(iter->Flow.LocalAddr, addrStr,
-							sizeof(addrStr));
-						printf("%s:%u %s ", addrStr, iter->Flow.LocalPort,
-							(iter->Outbound ? "---->" : "<----"));
-			*/
-
 			// 本地端口和PID的映射放到map里
 			if (iter->Outbound && mapPortWithPID != nullptr)
 			{
 				(*mapPortWithPID)[iter->Flow.LocalPort] = iter->Flow.ProcessId;
 			}
 
-			//            printf("remote %d\n",iter->Flow.RemotePort);
-			//            printf("local %d\n",iter->Flow.LocalPort);
 			if (iter->Flow.RemotePort == 43010)
 			{	// 这里不用转换
 				//                 printf("***************\n");
@@ -276,10 +217,6 @@ void PacketDivert::handleFlow()
 				(*mapPortWithPID)[iter->Flow.LocalPort] = iter->Flow.ProcessId;
 			}
 
-			//	 		WinDivertHelperFormatIPv6Address(iter->Flow.RemoteAddr, addrStr,
-			//	 			sizeof(addrStr));
-			//	 		printf("%s:%u\n", addrStr, iter->Flow.RemotePort);
-			//	 		fflush(stdout);
 		}
 
 		// 清空快照，不累计
