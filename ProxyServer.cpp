@@ -49,15 +49,13 @@ ProxyServer::~ProxyServer()
 	cout << "endl" << endl;
 }
 
-void
-ProxyServer::startServer(int maxWaitList, UINT altPort,
+void ProxyServer::startServer(int maxWaitList, UINT altPort,
 							  std::map<UINT, UINT32> *mapPortPID)
 {
 	if (mapPortPID != nullptr)
 	{
 		this->mapPortWithPID = mapPortPID;
 	}
-
 
 	if (listen(serverSocketFD, maxWaitList) == SOCKET_ERROR)
 	{
@@ -71,7 +69,9 @@ ProxyServer::startServer(int maxWaitList, UINT altPort,
 
 		cout << "server port: " << ntohs(serverSocketAddr.sin_port) << endl
 			 << endl;
-		struct sockaddr_in clientSocketAddr{}; // = serverSocketAddr; // 连接代理服务器的socket，但是是被修改后的
+		struct sockaddr_in clientSocketAddr
+		{
+		}; // = serverSocketAddr; // 连接代理服务器的socket，但是是被修改后的
 		int clientAddrLen = sizeof(serverSocketAddr);
 
 		SOCKET clientSocketFD = accept(serverSocketFD, (SOCKADDR *)&clientSocketAddr, &clientAddrLen);
@@ -147,33 +147,34 @@ ProxyServer::startServer(int maxWaitList, UINT altPort,
 	}
 }
 
-int
-ProxyServer::transDataInner(SOCKET getDataSocketFD, SOCKET sendDataSocketFD,
+int ProxyServer::transDataInner(SOCKET getDataSocketFD, SOCKET sendDataSocketFD,
 								BOOL inbound, UINT oriClientPort, struct in_addr serverAddr)
 {
 
-
 	UINT32 curPID = 0;
-//    cout << " originClientPort = "<<oriClientPort <<endl;
+	//    cout << " originClientPort = "<<oriClientPort <<endl;
 
-    int count = 0;
+	int count = 0;
 	if (mapPortWithPID != nullptr)
 	{
-        // 必须得找到pid！！！
-        while(true) {
-            if (mapPortWithPID->find(oriClientPort) != mapPortWithPID->end()) {
-                curPID = (*mapPortWithPID)[oriClientPort];
-                break;
-            }
+		// 必须得找到pid！！！
+		while (true)
+		{
+			if (mapPortWithPID->find(oriClientPort) != mapPortWithPID->end())
+			{
+				curPID = (*mapPortWithPID)[oriClientPort];
+				break;
+			}
 
-            if (count > 30){
-                cerr << "can not get pid!!" <<endl;
-                exit(-1);
-                break;
-            }
-            count ++;
-            Sleep(100);
-        }
+			if (count > 30)
+			{
+				cerr << "can not get pid!!" << endl;
+				// exit(-1);
+				break;
+			}
+			count++;
+			Sleep(100);
+		}
 	}
 
 	char buf[8192];
@@ -253,19 +254,18 @@ ProxyServer::transDataInner(SOCKET getDataSocketFD, SOCKET sendDataSocketFD,
 /// @param lenOfNewData 新数据长度（修改）
 /// @param pid pid
 /// @return 状态
-int
-ProxyServer::commitData(const char *const originData, const size_t lenOfOriData,
-                            const UINT32 pid, struct in_addr serverAddr,
-                            char **newData, size_t *lenOfNewData)
+int ProxyServer::commitData(const char *const originData, const size_t lenOfOriData,
+							const UINT32 pid, struct in_addr serverAddr,
+							char **newData, size_t *lenOfNewData)
 {
 
-    auto serverIp = serverAddr.S_un.S_un_b;
-    cout << "remote server ip is: "
-         << (int)serverIp.s_b1 << "."
-         << (int)serverIp.s_b2 << "."
-         << (int)serverIp.s_b3 << "."
-         << (int)serverIp.s_b4 << "\t"
-         << endl;
+	auto serverIp = serverAddr.S_un.S_un_b;
+	cout << "remote server ip is: "
+		 << (int)serverIp.s_b1 << "."
+		 << (int)serverIp.s_b2 << "."
+		 << (int)serverIp.s_b3 << "."
+		 << (int)serverIp.s_b4 << "\t"
+		 << endl;
 
 	cout << "local application pid is: " << pid << endl;
 	*lenOfNewData = lenOfOriData;
