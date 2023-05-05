@@ -1,5 +1,5 @@
 /bin/*
 /build/*
 /.vscode/
-.idea/
-cmake-build-debug-visual-studio/
+/.idea/
+/cmake-build-debug-visual-studio/

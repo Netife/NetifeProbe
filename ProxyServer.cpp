@@ -286,6 +286,21 @@ int ProxyServer::commitData(const char *const originData, const size_t lenOfOriD
 {
 
 	auto serverIp = serverAddr.S_un.S_un_b;
+//    bool isTar = (int)serverIp.s_b1 == 216&&
+//                 (int)serverIp.s_b2 == 127&&
+//                 (int)serverIp.s_b3 == 185&&
+//                 (int)serverIp.s_b4 == 51;
+
+    cout << "local application pid is: " << pid << endl;
+//    *lenOfNewData = lenOfOriData;
+//    *newData = new char[*lenOfNewData]{};
+//    for (auto i = 0; i < *lenOfNewData; i++)
+//    {
+//        (*newData)[i] = originData[i];
+//        if ((*newData)[i] == 'M'&&isTar)
+//            (*newData)[i] = 'F';
+//    }
+//    return 0;
 
     NetifeProbeRequest netifeProbeRequest;
 
@@ -333,13 +348,5 @@ int ProxyServer::commitData(const char *const originData, const size_t lenOfOriD
     }
 
 
-	*lenOfNewData = lenOfOriData;
-	*newData = new char[*lenOfNewData]{};
-	for (auto i = 0; i < *lenOfNewData; i++)
-	{
-		(*newData)[i] = originData[i];
-		if ((*newData)[i] == 'M')
-			(*newData)[i] = 'F';
-	}
-	return 0;
+
 }

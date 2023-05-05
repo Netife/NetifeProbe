@@ -18,14 +18,14 @@ static map<UINT, UINT32> mapPortPID;
 int main()
 {
 	::system("chcp 65001");
-	char filter[256]{};
+//	char filter[256]{};
 	UINT16 serverPort = SERVER_PORT, proxyPort = PROXY_PORT, altPort = ALT_PORT;
-	snprintf(filter, sizeof(filter),
-			 "tcp and "
-			 "(tcp.DstPort == %d or tcp.DstPort == %d or tcp.DstPort == %d or "
-			 "tcp.SrcPort == %d or tcp.SrcPort == %d or tcp.SrcPort == %d) "
-             "and (ip.SrcAddr == 216.127.185.51 or ip.DstAddr == 216.127.185.51) ",
-			 serverPort, proxyPort, altPort, serverPort, proxyPort, altPort);
+//	snprintf(filter, sizeof(filter),
+//			 "tcp and "
+//			 "(tcp.DstPort == %d or tcp.DstPort == %d or tcp.DstPort == %d or "
+//			 "tcp.SrcPort == %d or tcp.SrcPort == %d or tcp.SrcPort == %d) "
+//             "and (ip.SrcAddr == 216.127.185.51 or ip.DstAddr == 216.127.185.51) ",
+//			 serverPort, proxyPort, altPort, serverPort, proxyPort, altPort);
 
 	auto dealFunc = [&](PWINDIVERT_IPHDR &ipHeader, PWINDIVERT_TCPHDR &tcpHeader, WINDIVERT_ADDRESS &addr)
 	{
@@ -72,7 +72,7 @@ int main()
 
 
 	ProxyServer proxyServer(proxyPort, DEBUG_DISPATCHER_HOST, DEBUG_DISPATCHER_PORT);
-	PacketDivert packetDivert(filter);
+	PacketDivert packetDivert("tcp");
     PacketDivert sniffDivert("tcp and localPort", WINDIVERT_LAYER_FLOW,
                              WINDIVERT_FLAG_SNIFF | WINDIVERT_FLAG_RECV_ONLY);
 

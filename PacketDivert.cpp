@@ -74,7 +74,7 @@ void PacketDivert::startDivert(
                                    nullptr, nullptr);
 		if (ipHeader == nullptr || tcpHeader == nullptr)
 		{
-			cerr << "failed to parse packet : " << GetLastError() << endl;
+//			cerr << "failed to parse packet : " << GetLastError() << endl;
 			continue;
 		}
 

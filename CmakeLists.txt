@@ -20,7 +20,15 @@ find_package(Protobuf REQUIRED)
 include_directories(./lib)
 link_directories(./lib)
 
-add_executable(NetifeProbe main.cpp PacketDivert.h PacketDivert.cpp ProxyServer.h ProxyServer.cpp gRpcServices/NetifePostClientImpl.h gRpcServices/NetifePostClientImpl.cpp gRpcModel/NetifeMessage.pb.h gRpcModel/NetifeMessage.grpc.pb.h gRpcModel/NetifeMessage.pb.cc gRpcModel/NetifeMessage.grpc.pb.cc)
+add_executable(NetifeProbe main.cpp
+        PacketDivert.h PacketDivert.cpp
+        ProxyServer.h ProxyServer.cpp
+        gRpcServices/NetifePostClientImpl.h
+        gRpcServices/NetifePostClientImpl.cpp
+        gRpcModel/NetifeMessage.pb.h
+        gRpcModel/NetifeMessage.grpc.pb.h
+        gRpcModel/NetifeMessage.pb.cc
+        gRpcModel/NetifeMessage.grpc.pb.cc)
 
 # gRpc
 target_link_libraries(NetifeProbe PRIVATE
