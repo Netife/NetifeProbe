@@ -5,7 +5,8 @@
 #include <WinSock2.h>
 #include <thread>
 #include <mutex>
-#include <map>
+#include "gRpcServices/NetifePostClientImpl.h"
+
 #pragma comment(lib, "WinDivert.lib")
 #pragma comment(lib, "Ws2_32.lib")
 
@@ -19,9 +20,9 @@ private:
 	SOCKET serverSocketFD;
 	bool isLoop = false;
 	std::mutex myThreadMutex;
-
+    Netife::NetifePostClientImpl client;
 public:
-	explicit ProxyServer(UINT proxyPort);
+	explicit ProxyServer(UINT proxyPort, const string& name, const std::string& port);
 	~ProxyServer();
 
 	void startServer(int maxWaitList, UINT altPort, std::map<UINT, UINT32> *mapPortPID = nullptr);

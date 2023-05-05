@@ -1,10 +1,15 @@
 #include "ProxyServer.h"
 #include <map>
 using namespace std;
+
+#include <grpcpp/security/credentials.h>
+#include <grpcpp/create_channel.h>
+
 #pragma comment(lib, "WinDivert.lib")
 #pragma comment(lib, "Ws2_32.lib")
 
-ProxyServer::ProxyServer(UINT proxyPort)
+ProxyServer::ProxyServer(UINT proxyPort, const string& name, const std::string& port) : client(
+        grpc::CreateChannel(name + ":" + port, grpc::InsecureChannelCredentials()))
 {
 
 	// 构建 windows server api
@@ -37,7 +42,7 @@ ProxyServer::ProxyServer(UINT proxyPort)
 	serverSocketAddr.sin_port = htons(proxyPort);
 
 	// 绑定
-	if (bind(serverSocketFD, (SOCKADDR *)&serverSocketAddr, sizeof(serverSocketAddr)) == SOCKET_ERROR)
+	if (::bind(serverSocketFD, (SOCKADDR *)&serverSocketAddr, sizeof(serverSocketAddr)) == SOCKET_ERROR)
 	{
 		cerr << "failed to bind socket: " << WSAGetLastError() << endl;
 	}
@@ -108,8 +113,12 @@ void ProxyServer::startServer(int maxWaitList, UINT altPort,
 				}
 
 				// 配置服务器端属性，这里和目标服务器位置不同，但可以通过WinDivert重定向
+
+
 				struct sockaddr_in fakerServerSocketAddr{};
-//				memset(&fakerServerSocketAddr, 0, sizeof(fakerServerSocketAddr));
+
+
+                //memset(&fakerServerSocketAddr, 0, sizeof(fakerServerSocketAddr));
 
 				fakerServerSocketAddr.sin_family = AF_INET;
 				fakerServerSocketAddr.sin_port = htons(altPort);
@@ -135,13 +144,19 @@ void ProxyServer::startServer(int maxWaitList, UINT altPort,
                                    fakerServerSocketAddr.sin_addr);
 					// 向外的数据包
 
-					isFinished = true;
-					// 线程结束
-					}).detach();
-					transDataInner(newClientSocketFD, clientSocketFD,
-                                   true,originClientPort,
-                                   fakerServerSocketAddr.sin_addr);
-					// 向里的数据包
+
+                    isFinished = true;
+
+
+                    // 线程结束
+
+
+                    }).detach();
+					transDataInner(newClientSocketFD,
+                                   clientSocketFD,true,originClientPort,fakerServerSocketAddr.sin_addr);
+
+
+                    // 向里的数据包
 
 					while (!isFinished) {
 						Sleep(100);
@@ -157,12 +172,18 @@ int ProxyServer::transDataInner(SOCKET getDataSocketFD, SOCKET sendDataSocketFD,
 {
 
 	UINT32 curPID = 0;
+
+
 	//    cout << " originClientPort = "<<oriClientPort <<endl;
 
 	int count = 0;
 	if (mapPortWithPID != nullptr)
 	{
-		// 必须得找到pid！！！
+
+
+        // 必须得找到pid！！！
+
+
 		while (true)
 		{
 			if (mapPortWithPID->find(oriClientPort) != mapPortWithPID->end())
@@ -265,14 +286,53 @@ int ProxyServer::commitData(const char *const originData, const size_t lenOfOriD
 {
 
 	auto serverIp = serverAddr.S_un.S_un_b;
-	cout << "remote server ip is: "
-		 << (int)serverIp.s_b1 << "."
-		 << (int)serverIp.s_b2 << "."
-		 << (int)serverIp.s_b3 << "."
-		 << (int)serverIp.s_b4 << "\t"
-		 << endl;
 
-	cout << "local application pid is: " << pid << endl;
+    NetifeProbeRequest netifeProbeRequest;
+
+    //TODO 添加 uuid
+
+    netifeProbeRequest.set_uuid("this_is_uuid");
+
+    //添加 originDqta
+    std::string rawText;
+
+    rawText.assign(originData, originData + lenOfOriData);
+    netifeProbeRequest.set_raw_text(rawText);
+    netifeProbeRequest.set_pid(to_string(pid));
+
+    //TODO 支持端口修改
+
+    netifeProbeRequest.set_dst_ip_addr(to_string((int)serverIp.s_b1) + "." + to_string((int)serverIp.s_b2) + "." +
+                                               to_string((int)serverIp.s_b3) + "." + to_string((int)serverIp.s_b4));
+    netifeProbeRequest.set_protocol(NetifeMessage::NetifeProbeRequest_Protocol_TCP);
+
+    //TODO 支持SERVER修改
+
+    netifeProbeRequest.set_application_type(NetifeMessage::NetifeProbeRequest_ApplicationType_CLIENT);
+
+    auto response = client.ProcessProbe(netifeProbeRequest);
+
+    if(!response.has_value()){
+        // TODO 改成错误码
+
+        *lenOfNewData = lenOfOriData;
+        *newData = new char[*lenOfNewData]{};
+        for (auto i = 0; i < *lenOfNewData; i++)
+        {
+            (*newData)[i] = originData[i];
+        }
+        return 0;
+    }else{
+        *lenOfNewData = response.value().response_text().length();
+        *newData = new char[*lenOfNewData]{};
+        for (int i = 0; i < *lenOfNewData; ++i) {
+            (*newData)[i] = response.value().response_text()[i];
+        }
+
+        return 0;
+    }
+
+
 	*lenOfNewData = lenOfOriData;
 	*newData = new char[*lenOfNewData]{};
 	for (auto i = 0; i < *lenOfNewData; i++)

@@ -5,6 +5,11 @@ using namespace std;
 #define PROXY_PORT 34010
 #define ALT_PORT 43010
 #define SERVER_PORT 80
+
+#define GRPC_DEBUG_MODE true
+#define DEBUG_DISPATCHER_HOST "localhost"
+#define DEBUG_DISPATCHER_PORT "7890"
+
 #pragma comment(lib, "WinDivert.lib")
 #pragma comment(lib, "Ws2_32.lib")
 #pragma comment(lib, "shlwapi.lib")
@@ -61,8 +66,12 @@ int main()
 		}
 	};
 
+    // 这个地方来判断是否启用了DEBUG模式，如果启用了那么就使用DEFINE的HOST和PORT
 
-	ProxyServer proxyServer(proxyPort);
+    //TODO 这个地方需要修改！为了不侵入本REPO程序故没有修改启动逻辑
+
+
+	ProxyServer proxyServer(proxyPort, DEBUG_DISPATCHER_HOST, DEBUG_DISPATCHER_PORT);
 	PacketDivert packetDivert(filter);
     PacketDivert sniffDivert("tcp and localPort", WINDIVERT_LAYER_FLOW,
                              WINDIVERT_FLAG_SNIFF | WINDIVERT_FLAG_RECV_ONLY);
