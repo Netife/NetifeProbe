@@ -1,0 +1,196 @@
+syntax = "proto3";
+
+package NetifeMessage;
+
+// Dispatcher 服务
+service NetifeService {
+    rpc ProcessProbe (NetifeProbeRequest) returns (NetifeProbeResponse); // [已发布]
+    rpc Register (NetifeRegisterRequest) returns (NetifeRegisterResponse); // [弃用] 只允许同一个对象链接 Dispatcher，不然调试不知道是不是真实数据
+    rpc Composer (NetifeComposerRequest) returns (NetifeComposerResponse); // [等待 Probe 中]
+    rpc Command (NetifePluginCommandRequest) returns (NetifePluginCommandResponse); // [已发布]
+    rpc ScriptRegister (NetifeScriptRegisterRequest) returns (NetifeScriptRegisterResponse); // [弃用] 通过框架直接加载
+    rpc ScriptDebug (NetifeScriptDebuggerRequest) returns (NetifeScriptDebuggerResponse); // [开发中]
+}
+
+// 消息上报
+service NetifePost{
+    rpc UploadRequest (NetifeProbeRequest) returns (NetifeProbeResponse); // [已发布]
+}
+
+// 定义 Netife Probe 的请求信息的数据结构
+message NetifeProbeRequest {
+
+    string uuid = 1; // 全局唯一 UUID，如果是 HTTP / HTTPS 要求响应和回复需要对应唯一；如果是 WS / WSS 那么要求一个通信道中 UUID 均相同
+
+    //表示捕获到的协议类型
+    enum RequestType {
+        HTTP = 0; // HTTP协议
+        HTTPS = 1; // HTTPS协议
+        WS = 2; // WS协议
+        WSS = 3; // WSS协议
+        PING = 4; // PING
+        OTHER = 5; //[本字段保留以便于扩展] 其他
+    }
+
+    RequestType request_type = 2;
+
+    //数据标注
+    enum ApplicationType {
+        CLIENT = 0; // 表示本消息为客户端请求
+        SERVER = 1; // 表示本消息为服务器响应
+    }
+
+    ApplicationType application_type = 3;
+
+    //协议类型
+    enum Protocol {
+        TCP = 0;
+        UDP = 1;
+    }
+
+    Protocol protocol = 4;
+
+    string dst_ip_addr = 5; // 数据包的原始云端 IP 地址
+
+    string dst_ip_port = 6; // 数据包的原始云端 PORT 地址
+
+    string src_ip_addr = 7; // 数据包的来源 IP 地址
+
+    string src_ip_port = 8; // 数据包的来源 PORT
+
+    bool is_raw_text = 9; // 如果内容不为 Binary Stream 本布尔为 True
+
+    optional int32 uuid_sub = 10; // 如果是 WS / WSS ，那么此表示的是发送顺序，且标号是单独的
+
+    // 如果是 HTTP / HTTPS 那么就是 Raw Text，如果是 WS / WSS 那么就是 字符数据 或 Binary Steam 的 Hex String 表示
+    string raw_text = 11;
+
+    optional string pid = 12; // [本字段可选] 如果可以抓到进程信息，那么本为其对应的 PID
+
+    optional string process_name = 13; // [本字段可选] 如果可以抓到进程信息，那么本为其对应的进程名称
+}
+
+// 定义返回给 Netife Probe 信息的数据结构
+message NetifeProbeResponse {
+    string uuid = 1; // UUID 回显，本 UUID 与gRpc请求的 UUID相同
+
+    string dst_ip_addr = 2; // 返回修改后的发送 IP 地址
+
+    string dst_ip_port = 3; // 返回修改后的发送 PORT 地址
+
+    string response_text = 4; // 返回修改后的 ResponseText。
+                              // HTTP / HTTPS 对应的是 Raw Request，WS / WSS 对应的是 String 或 Binary Stream 的 Hex String 表示
+}
+
+// 定义 Netife FrontendCore 向 Netife Dispatcher 注册的请求信息 [上报地址的注册]
+message NetifeRegisterRequest {
+    string grpc_host = 1; // 表示的是 gRpc 的地址
+    string grpc_port = 2; // 表示的是 gRpc 的端口
+}
+
+// 定义 Netife Dispatcher 注册返回的信息
+message NetifeRegisterResponse {
+    bool status = 1; // 返回注册接受信息
+}
+
+// 定义 Netife Composer 信息，表示请求某个地址
+message NetifeComposerRequest {
+    string uuid = 1; // 自定义请求的 UUID，如果请求类型为 WS / WSS ，那么要求整个通信过程中 UUID 一致
+
+    enum ProtocolType {
+        HTTP = 0;
+        HTTPS = 1;
+        WS = 2;
+        WSS = 3;
+    }
+
+    ProtocolType protocol_type = 2;
+
+    string dst_ip_addr = 3; // 数据包的原始云端 IP 地址
+
+    string dst_ip_port = 4; // 数据包的原始云端 PORT 地址
+
+    string src_ip_addr = 5; // 数据包的来源 IP 地址
+
+    string src_ip_port = 6; // 数据包的来源 PORT
+
+    bool is_raw_text = 7; // [WS/WSS下存在本字段] 如果内容不为 Binary Stream 本布尔为 True
+
+    optional int32 uuid_sub = 8; // 如果是 WS / WSS ，那么此表示的是发送顺序，且标号是单独的
+
+    // 如果是 HTTP / HTTPS 那么就是 Raw Text，如果是 WS / WSS 那么就是 字符数据 或 Binary Steam 的 Hex String 表示
+    string raw_text = 9;
+}
+
+// 定义 Netife Composer 返回的信息
+message NetifeComposerResponse {
+
+    string uuid = 1; // UUID 回显
+
+    string raw_back = 2; // 返回的信息，如果是 HTTP / HTTPS 则为 Raw Text，如果是 WS / WSS 那就是 字符数据 或 Binary Steam 的 Hex String 表示
+}
+
+// 表示触发某个插件的命令，他可能会影响逻辑，也可能只是返回一个信息
+message NetifePluginCommandRequest {
+
+    string namespace = 1; // 表示插件的命名空间
+
+    string command_prefix = 2; // 表示插件的命令头
+
+    repeated string params = 3; // 表示携带的参数，
+
+    optional string uuid = 4; // 附带消息的 UUID 选项
+
+    optional int32 uuid_sub = 5; // 表示指向的某个请求，如果需要的话
+}
+
+// 表示触发插件的返回信息
+message NetifePluginCommandResponse {
+
+    bool status = 1; // 插件返回的状态
+
+    string result = 2; // 插件返回的信息
+}
+
+message NetifeScriptRegisterRequest {
+
+    string script_name = 1; // 脚本名称
+
+    string script_description = 2; // 脚本描述
+
+    optional string trigger_addr = 3; // [触发约束] 触发IP
+
+    optional string trigger_port = 4; // [触发约束] 触发端口
+
+    optional string trigger_spread_chain = 5; // [触发依赖] 传递链，以;分割，表示脚本触发脚本的依次传递链
+
+    optional string trigger_spread_plugin = 6; // [触发依赖] 传递链，以;分割，表示脚本触发插件的依次传递链
+
+    optional string trigger_spread_chain_before = 7; // [触发依赖] 传递链，以;分割，表示脚本触发脚本前的依次传递链
+
+    optional string trigger_spread_plugin_before = 8; // [触发依赖] 传递链，以;分割，表示脚本触发插件前的依次传递链
+
+    string script_content = 9; // [脚本内容] Script 脚本的内容，应该为纯 JS 内容
+
+    string version = 10; // [脚本内容] Script 的版本
+}
+
+message NetifeScriptRegisterResponse {
+
+    bool status = 1; // 脚本返回的状态
+
+    string result = 2; // 脚本返回的信息
+}
+
+message NetifeScriptDebuggerRequest {
+
+    string script_name = 1; // 插件的名称
+
+}
+
+message NetifeScriptDebuggerResponse {
+
+    string ws_addr = 1; // 调试使用的 WS 的地址
+
+    string ws_port = 2; // 调试使用的 WS 的端口
+}
