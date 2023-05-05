@@ -6,13 +6,29 @@
 cmake_minimum_required(VERSION 3.23)
 project(NetifeProbe)
 
+set(CMAKE_CXX_STANDARD 17)
+
 add_definitions("-DUNICODE" "-D_UNICODE")
+
+# gRpc
+find_package(gRPC REQUIRED)
+find_package(Protobuf REQUIRED)
+
+# UUID
+# find_package(stduuid CONFIG REQUIRED)
 
 include_directories(./lib)
 link_directories(./lib)
 
-add_executable(NetifeProbe main.cpp PacketDivert.h PacketDivert.cpp ProxyServer.h ProxyServer.cpp)
-target_link_libraries(NetifeProbe WinDivert.lib Ws2_32 shlwapi)
+add_executable(NetifeProbe main.cpp PacketDivert.h PacketDivert.cpp ProxyServer.h ProxyServer.cpp gRpcServices/NetifePostClientImpl.h gRpcServices/NetifePostClientImpl.cpp gRpcModel/NetifeMessage.pb.h gRpcModel/NetifeMessage.grpc.pb.h gRpcModel/NetifeMessage.pb.cc gRpcModel/NetifeMessage.grpc.pb.cc)
+
+# gRpc
+target_link_libraries(NetifeProbe PRIVATE
+        gRPC::grpc++ gRPC::grpc++_reflection gRPC::gpr gRPC::grpc
+        protobuf::libprotoc protobuf::libprotobuf protobuf::libprotobuf-lite)
+
+target_link_libraries(NetifeProbe PRIVATE WinDivert.lib Ws2_32 shlwapi)
+
 
 
 
