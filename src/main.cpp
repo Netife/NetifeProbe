@@ -22,10 +22,6 @@ using namespace std;
 static map<UINT, UINT32> mapPortPID;
 
 
-
-
-
-
 int main() {
 
 
@@ -81,15 +77,10 @@ int main() {
 
         if (!response.has_value()) {
             // TODO 改成错误码
-
             newData = originData;
             return 0;
         } else {
-            auto lenOfNewData = response.value().response_text().length();
-            for (auto i = 0; i < lenOfNewData; ++i) {
-                newData[i] = response.value().response_text()[i];
-            }
-
+            newData = response.value().response_text();
             return 0;
         }
 
