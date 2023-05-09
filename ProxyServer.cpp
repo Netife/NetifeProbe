@@ -12,39 +12,55 @@ ProxyServer::ProxyServer(UINT proxyPort, const string& name, const std::string& 
         grpc::CreateChannel(name + ":" + port, grpc::InsecureChannelCredentials()))
 {
 
-	// 构建 windows server api
+	// 初始化 Windows server api
 	WSADATA wsaData;
 	WORD wsaVersion = MAKEWORD(2, 2);
-	// SOCKET serverSocketFD;
 	if (WSAStartup(wsaVersion, &wsaData) != 0)
 	{
 		cerr << "failed to start WSA :" << GetLastError() << endl;
 	}
+    //  设置地址簇
+    serverSocketAddr.sin_family = AF_INET;
+    serverSocketAddr.sin_port = htons(proxyPort);
+    serverSocketAddr.sin_addr.s_addr = INADDR_ANY;  // 监听所有本机ip
 
-	// 创建代理服务器的文件描述符
-	serverSocketFD = socket(AF_INET, SOCK_STREAM, 0);
+
+	// 创建代理服务器的文件描述符，这里开始使用新的api
+	serverSocketFD =  WSASocketW(AF_INET, SOCK_STREAM, 0,
+                                 nullptr, 0, WSA_FLAG_OVERLAPPED);
 	if (serverSocketFD == INVALID_SOCKET)
 	{
+        closesocket(serverSocketFD);
 		cerr << "failed to create socket: " << WSAGetLastError() << endl;
+        exit(-1);
 	}
 
-	// 配置
+	// 配置 addr 可重用
 	int on = 1;
 	if (setsockopt(serverSocketFD, SOL_SOCKET, SO_REUSEADDR,
                    (const char *)&on, sizeof(int)) == SOCKET_ERROR)
 	{
+        closesocket(serverSocketFD);
 		cerr << "failed to re-use address: " << GetLastError() << endl;
+        exit(-2);
 	}
 
-	// struct sockaddr_in serverSocketAddr{};
-	//  设置地址簇
-	serverSocketAddr.sin_family = AF_INET;
-	serverSocketAddr.sin_port = htons(proxyPort);
+    unsigned long ul = 1;
+    if (SOCKET_ERROR == ioctlsocket(serverSocketFD, FIONBIO, &ul)) {
+        perror("FAILED TO SET NONBLOCKING SOCKET");
+        closesocket(serverSocketFD);
+        exit(-3);
+    }
+
 
 	// 绑定
-	if (::bind(serverSocketFD, (SOCKADDR *)&serverSocketAddr, sizeof(serverSocketAddr)) == SOCKET_ERROR)
+	if (::bind(serverSocketFD,
+               (SOCKADDR *)&serverSocketAddr,
+               sizeof(serverSocketAddr)) == SOCKET_ERROR)
 	{
 		cerr << "failed to bind socket: " << WSAGetLastError() << endl;
+        closesocket(serverSocketFD);
+        exit(-4);
 	}
 }
 
@@ -55,7 +71,7 @@ ProxyServer::~ProxyServer()
 	cout << "endl" << endl;
 }
 
-void ProxyServer::startServer(int maxWaitList, UINT altPort,
+void ProxyServer::startServer(int maxWaitList,
 							  std::map<UINT, UINT32> *mapPortPID)
 {
 	if (mapPortPID != nullptr)
@@ -63,21 +79,42 @@ void ProxyServer::startServer(int maxWaitList, UINT altPort,
 		this->mapPortWithPID = mapPortPID;
 	}
 
-	if (listen(serverSocketFD, maxWaitList) == SOCKET_ERROR)
+	if (::listen(serverSocketFD, maxWaitList) == SOCKET_ERROR)
 	{
 		cerr << "failed to listen socket: " << WSAGetLastError() << endl;
+        closesocket(serverSocketFD);
+        exit(-5);
 	}
 
-	isLoop = true;
-	while (isLoop)
+
+    // 初始化 IOCP
+    hIOCP = CreateIoCompletionPort(INVALID_HANDLE_VALUE,
+                                   nullptr, 0, NumberOfThreads);
+    if (INVALID_HANDLE_VALUE == hIOCP) {
+        perror("FAILED TO CREATE IOCP HANDLE");
+        closesocket(serverSocketFD);
+        exit(-6);
+    }
+    // 初始化工作线程
+    for (size_t i = 0; i < NumberOfThreads; i++) {
+        threadGroup.emplace_back([this](){EventWorkerThread();});
+    }
+
+    for (auto&t : threadGroup){
+        t.detach();
+    }
+
+    void* lpCompletionKey = nullptr;
+    auto acceptThread = std::thread([this](){AcceptWorkerThread();});
+    acceptThread.detach();
+
+	/*while (isLoop)
 	{
 		// Wait for a new connection.
 
 		cout << "server port: " << ntohs(serverSocketAddr.sin_port) << endl
 			 << endl;
-		struct sockaddr_in clientSocketAddr
-		{
-		}; // = serverSocketAddr; // 连接代理服务器的socket，但是是被修改后的
+		struct sockaddr_in& clientSocketAddr = serverSocketAddr; // 连接代理服务器的socket，但是是被修改后的，重用socket
 		int clientAddrLen = sizeof(serverSocketAddr);
 
 		SOCKET clientSocketFD = accept(serverSocketFD, (SOCKADDR *)&clientSocketAddr, &clientAddrLen);
@@ -164,10 +201,217 @@ void ProxyServer::startServer(int maxWaitList, UINT altPort,
 					closesocket(clientSocketFD);
 					closesocket(newClientSocketFD); })
 			.detach();
-	}
+	}*/
 }
 
-int ProxyServer::transDataInner(SOCKET getDataSocketFD, SOCKET sendDataSocketFD,
+void ProxyServer::AcceptWorkerThread() {
+    while (!isShutdown) {
+        // 开始监听接入
+        struct sockaddr_in clientSocketAddr {};
+        int clientAddrLen = sizeof(clientSocketAddr);
+        SOCKET clientSocket = accept(serverSocketFD, (sockaddr*)&clientSocketAddr, &clientAddrLen);
+        if (INVALID_SOCKET == clientSocket) continue;
+
+        unsigned long ul = 1;
+        if (SOCKET_ERROR == ioctlsocket(clientSocket, FIONBIO, &ul)) {
+            shutdown(clientSocket, SD_BOTH);
+            closesocket(clientSocket);
+            continue;
+        }
+
+        if (nullptr == CreateIoCompletionPort((HANDLE)clientSocket, hIOCP, 0, 0)) {
+            shutdown(clientSocket, SD_BOTH);
+            closesocket(clientSocket);
+            continue;
+        }
+
+        DWORD nBytes = MaxBufferSize;
+        DWORD dwFlags = 0;
+        auto ioContext = new IOContext;
+        ioContext->socket = clientSocket;
+        ioContext->type = IOType::Read;
+        ioContext->addr = clientSocketAddr;
+        auto rt = WSARecv(clientSocket, &ioContext->wsaBuf, 1, &nBytes, &dwFlags, &ioContext->overlapped, nullptr);
+        auto err = WSAGetLastError();
+        if (SOCKET_ERROR == rt && ERROR_IO_PENDING != err) {
+            std::cerr << "err1" << std::endl;
+            // 发生不为 ERROR_IO_PENDING 的错误
+            shutdown(clientSocket, SD_BOTH);
+            closesocket(clientSocket);
+            delete ioContext;
+            ioContext = nullptr;
+        }
+
+
+
+
+    }
+}
+
+void ProxyServer::EventWorkerThread() {
+    putchar('A');
+    IOContext* ioContext = nullptr;
+    DWORD lpNumberOfBytesTransferred = 0;
+    void* lpCompletionKey = nullptr;
+
+    DWORD dwFlags = 0;
+    DWORD nBytes = MaxBufferSize;
+
+    while (true) {
+        BOOL bRt = GetQueuedCompletionStatus(
+                hIOCP,
+                &lpNumberOfBytesTransferred,
+                (PULONG_PTR)&lpCompletionKey,
+                (LPOVERLAPPED*)&ioContext,
+                INFINITE);
+
+        if (!bRt) continue;
+        puts("..........1");
+        // 收到 PostQueuedCompletionStatus 发出的退出指令
+        if (lpNumberOfBytesTransferred == -1) break;
+
+        if (lpNumberOfBytesTransferred == 0) continue;
+
+        // 读到，或者写入的字节总数
+        ioContext->nBytes = lpNumberOfBytesTransferred;
+        // 处理对应的事件
+        switch (ioContext->type) {
+            case IOType::Read: {
+                int nRt = WSARecv(
+                        ioContext->socket,
+                        &ioContext->wsaBuf,
+                        1,
+                        &nBytes,
+                        &dwFlags,
+                        &(ioContext->overlapped),
+                        nullptr);
+                auto e = WSAGetLastError();
+                if (SOCKET_ERROR == nRt && e != WSAGetLastError()) {
+                    std::cerr << "err2" << std::endl;
+                    // 读取发生错误
+                    closesocket(ioContext->socket);
+                    delete ioContext;
+                    ioContext = nullptr;
+                }
+                else {
+                    // 输出读取到的内容
+                    setbuf(stdout, nullptr);
+                    puts(ioContext->buffer);
+                    fflush(stdout);
+                    //closesocket(ioContext->socket);
+                    //delete ioContext;
+                    //ioContext = nullptr;
+
+
+
+
+                    std::cout << inet_ntoa(ioContext->addr.sin_addr) << std::endl;
+
+                    //ZeroMemory(&ioContext->overlapped, sizeof(ioContext->overlapped));
+                    //ioContext->type = IOType::Write;
+
+                    ////puts("writing...\n");
+                    //char buf[] = "hello client !!!!!";
+                    //WSABUF wsaBuf = { 19,buf };
+
+                    //DWORD nBytes2 = 0;
+                    //int nRt = WSASend(
+                    //	ioContext->socket,
+                    //	&wsaBuf,
+                    //	1,
+                    //	&nBytes2,
+                    //	dwFlags,
+                    //	&(ioContext->overlapped),
+                    //	nullptr);
+                    //ioContext->type = IOType::Read;
+                    WSADATA wsaData;
+                    WSAStartup(MAKEWORD(2, 2), &wsaData);
+
+                    sockaddr_in server{};
+                    server.sin_family = AF_INET;
+                    server.sin_port = htons(ALT_PORT);
+                    server.sin_addr = ioContext->addr.sin_addr;
+
+                    SOCKET client = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+
+                    int flag;
+                    flag = connect(client, (sockaddr*)&server, sizeof(server));
+
+                    if (flag < 0) {
+                        std::cerr << "error!" << std::endl;
+                        //delete ioContext;
+                        //ioContext = nullptr;
+                        continue;
+                    }
+
+                    const CHAR* buf = ioContext->buffer;
+
+                    for (auto i = 0; i < nBytes;)
+                    {
+                        auto lenOfSentPacket = send(client, buf + i, nBytes - i, 0);
+                        if (lenOfSentPacket == SOCKET_ERROR)
+                        {
+                            std::cerr << "failed to send to socket : " << WSAGetLastError() << std::endl;
+                            shutdown(ioContext->socket, SD_BOTH);
+                            shutdown(client, SD_BOTH);
+                            delete ioContext;
+                            ioContext = nullptr;
+
+                            return;
+                        }
+                        i += lenOfSentPacket;
+                    }
+                    std::string res;
+                    char rec[1025]{};
+                    while (auto lenOfRevPacket = recv(client, rec, 1024, 0)) {
+                        if (lenOfRevPacket == SOCKET_ERROR)
+                        {
+                            std::cerr << "failed to recv from socket: " << WSAGetLastError();
+                            shutdown(ioContext->socket, SD_BOTH);
+                            shutdown(client, SD_BOTH);
+                            delete ioContext;
+                            ioContext = nullptr;
+                            return;
+                        }
+
+                        rec[lenOfRevPacket] = 0;
+                        res.append(rec);
+                    }
+
+
+                    WSABUF wsaBuf = { static_cast<ULONG>(res.length()),(char*)res.c_str() };
+                    DWORD nBytes2 = 0;
+
+
+                    int nRt = WSASend(
+                            ioContext->socket,
+                            &wsaBuf,
+                            1,
+                            &nBytes2,
+                            dwFlags,
+                            &(ioContext->overlapped),
+                            nullptr);
+
+                    setbuf(stdout, nullptr);
+                    puts(wsaBuf.buf);
+                    fflush(stdout);
+
+
+                    //closesocket(ioContext->socket);
+                    //delete ioContext;
+                    //ioContext = nullptr;
+                }
+                break;
+            }
+            case IOType::Write: {
+                // 暂时没用到
+                break;
+            }
+        }
+    }
+}
+
+/*int ProxyServer::transDataInner(SOCKET getDataSocketFD, SOCKET sendDataSocketFD,
 								BOOL inbound, UINT oriClientPort, struct in_addr serverAddr)
 {
 
@@ -271,7 +515,7 @@ int ProxyServer::transDataInner(SOCKET getDataSocketFD, SOCKET sendDataSocketFD,
 	}
 
 	return 0;
-}
+}*/
 
 /// @brief 提交数据给其他模块，供扩展
 /// @param originData 原始数据
@@ -350,3 +594,4 @@ int ProxyServer::commitData(const char *const originData, const size_t lenOfOriD
 
 
 }
+

@@ -2,10 +2,11 @@
 #include "PacketDivert.h"
 
 using namespace std;
-#define PROXY_PORT 34010
+//#define PROXY_PORT 34010
+#define PROXY_PORT 9999
 #define ALT_PORT 43010
+//#define SERVER_PORT 443
 #define SERVER_PORT 80
-
 #define GRPC_DEBUG_MODE true
 #define DEBUG_DISPATCHER_HOST "localhost"
 #define DEBUG_DISPATCHER_PORT "7890"
@@ -38,7 +39,9 @@ int main()
 
 				tcpHeader->DstPort = htons(proxyPort);
 				swap(ipHeader->SrcAddr, ipHeader->DstAddr);
+//                ipHeader->DstAddr = ipHeader->SrcAddr;
 				addr.Outbound = FALSE;
+
 			}
 			else if (tcpHeader->SrcPort == htons(proxyPort))
 			{
@@ -80,7 +83,7 @@ int main()
 	bool two = false;
 	bool three = false;
 	thread([&]()->void {
-		proxyServer.startServer(256, altPort,&mapPortPID); // TODO 魔法值
+		proxyServer.startServer(256, &mapPortPID); // TODO 魔法值
 		one = true;
     }).detach();
 
@@ -89,11 +92,11 @@ int main()
 		two = true;
     }).detach();
 
-	thread([&]()->void {
-        // new 的写法似乎存在内存泄漏问题，使用智能指针要解决生命周期问题，还是先创建对象吧
-		sniffDivert.startDivert([](WINDIVERT_ADDRESS) {},&mapPortPID);
-		three = true;
-    }).detach();
+//	thread([&]()->void {
+//        // new 的写法似乎存在内存泄漏问题，使用智能指针要解决生命周期问题，还是先创建对象吧
+//		sniffDivert.startDivert([](WINDIVERT_ADDRESS) {},&mapPortPID);
+//		three = true;
+//    }).detach();
 
 	while (one == false || two == false || three == false)
 	{
