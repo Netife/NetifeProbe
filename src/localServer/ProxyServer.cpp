@@ -467,5 +467,6 @@ int ProxyServer::commitData(_In_ const std::string& originData,
                          serverAddr,
                          isOutBound,
                          newData);
+
 }
 
