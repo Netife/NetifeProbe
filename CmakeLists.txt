@@ -3,7 +3,7 @@
 # cmake --build .\build\
 # .\bin\NetifeProbe.exe
 
-cmake_minimum_required(VERSION 3.23)
+cmake_minimum_required(VERSION 3.25)
 project(NetifeProbe)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -20,9 +20,9 @@ find_package(Protobuf REQUIRED)
 include_directories(./lib)
 link_directories(./lib)
 
-add_executable(NetifeProbe main.cpp
-        PacketDivert.h PacketDivert.cpp
-        ProxyServer.h ProxyServer.cpp
+add_executable(NetifeProbe src/main.cpp
+        src/divert/PacketDivert.h src/divert/PacketDivert.cpp
+        src/localServer/ProxyServer.h src/localServer/ProxyServer.cpp
         gRpcServices/NetifePostClientImpl.h
         gRpcServices/NetifePostClientImpl.cpp
         gRpcModel/NetifeMessage.pb.h
@@ -35,6 +35,7 @@ target_link_libraries(NetifeProbe PRIVATE
         gRPC::grpc++ gRPC::grpc++_reflection gRPC::gpr gRPC::grpc
         protobuf::libprotoc protobuf::libprotobuf protobuf::libprotobuf-lite)
 
+# divert
 target_link_libraries(NetifeProbe PRIVATE WinDivert.lib Ws2_32 shlwapi)
 
 

@@ -15,7 +15,7 @@
 #define MAX_FLOWS           256
 #define INET6_ADDRSTRLEN    45
 
-#include "include/windivert.h"
+#include "../../include/windivert.h"
 
 
 class PacketDivert

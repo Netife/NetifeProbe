@@ -25,7 +25,10 @@ PacketDivert::~PacketDivert()
 /// @brief 启动抓包程序
 /// @param dealFunc 循环处理函数
 void PacketDivert::startDivert(
-        const std::function<void(PWINDIVERT_IPHDR &, PWINDIVERT_TCPHDR &, WINDIVERT_ADDRESS &)> &dealFunc)
+        const std::function<void(
+                PWINDIVERT_IPHDR &,
+                PWINDIVERT_TCPHDR &,
+                WINDIVERT_ADDRESS &)> &dealFunc)
 {
 
 	if (0 != modeFlag)
