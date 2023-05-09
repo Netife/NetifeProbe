@@ -290,7 +290,9 @@ void ProxyServer::eventWorkerThread() {
 
                     std::cout <<ioContext->nBytes;
 
-                    std::string originData(ioContext->buffer,ioContext->nBytes + 1);
+                    std::string originData(ioContext->buffer,ioContext->nBytes);
+                    originData.push_back('\0');
+
                     // 超出1024会补\0
                     // 这里直接初始化有坑，如果读到的数据有\0，比如接受图片，
                     // \0后的数据似乎都不会被统计到，因此必须指定初始化长度！！

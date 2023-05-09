@@ -39,6 +39,11 @@ int main() {
             _In_ const bool isOutBound,
             _Out_ std::string &newData
     ) ->int{
+
+
+//        newData = originData;
+
+//        return 0;
         auto serverIp = serverAddr.S_un.S_un_b;
 //    bool isTar = (int)serverIp.s_b1 == 216&&
 //                 (int)serverIp.s_b2 == 127&&
@@ -136,8 +141,14 @@ int main() {
     //TODO 这个地方需要修改！为了不侵入本REPO程序故没有修改启动逻辑
 
 
+    char filter[256]{};
+    snprintf(filter,sizeof(filter),
+             "tcp and "
+             "(tcp.DstPort != 7890 and tcp.DstPort != 7891 and tcp.DstPort != 7892 and "
+             "tcp.SrcPort != 7890 and tcp.SrcPort != 7891 and tcp.SrcPort != 7892)");
+
     ProxyServer proxyServer(proxyPort,commitDataFunc);
-    PacketDivert packetDivert("tcp");
+    PacketDivert packetDivert(filter);
     PacketDivert sniffDivert("tcp and localPort", WINDIVERT_LAYER_FLOW,
                              WINDIVERT_FLAG_SNIFF | WINDIVERT_FLAG_RECV_ONLY);
 
