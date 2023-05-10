@@ -7,10 +7,15 @@
 
 
 using namespace std;
+
+
 //#define PROXY_PORT 34010
 #define PROXY_PORT 9999
-//#define SERVER_PORT 443
+//#define SSL_SERVER_PORT 443
 #define SERVER_PORT 80
+
+
+
 #define GRPC_DEBUG_MODE true
 #define DEBUG_DISPATCHER_HOST "localhost"
 #define DEBUG_DISPATCHER_PORT "7890"
@@ -41,9 +46,9 @@ int main() {
     ) ->int{
 
 
-//        newData = originData;
+        newData = originData;
 
-//        return 0;
+        return 0;
         auto serverIp = serverAddr.S_un.S_un_b;
 //    bool isTar = (int)serverIp.s_b1 == 216&&
 //                 (int)serverIp.s_b2 == 127&&
@@ -144,8 +149,8 @@ int main() {
     char filter[256]{};
     snprintf(filter,sizeof(filter),
              "tcp and "
-             "(tcp.DstPort != 7890 and tcp.DstPort != 7891 and tcp.DstPort != 7892 and "
-             "tcp.SrcPort != 7890 and tcp.SrcPort != 7891 and tcp.SrcPort != 7892)");
+             "(tcp.DstPort != 7890 and tcp.DstPort != 7891 and tcp.DstPort != 7892 and tcp.DstPort != 7893 and "
+             "tcp.SrcPort != 7890 and tcp.SrcPort != 7891 and tcp.SrcPort != 7892 and tcp.SrcPort != 7893)");
 
     ProxyServer proxyServer(proxyPort,commitDataFunc);
     PacketDivert packetDivert(filter);

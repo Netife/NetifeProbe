@@ -356,7 +356,7 @@ void ProxyServer::eventWorkerThread() {
                         auto lenOfSentPacket = send(
                                 newClientSocketFD,
                                 newData.c_str() + i,
-                                static_cast<int>(newData.length() -i),
+                                static_cast<int>(newData.length() - i),
                                 0);
                         if (SOCKET_ERROR == lenOfSentPacket) {
                             std::cerr << "failed to send to socket : " << WSAGetLastError() << std::endl;
@@ -443,11 +443,13 @@ void ProxyServer::eventWorkerThread() {
                 break;
             }
             case IOType::Write: {
-                // 暂时没用到，这里是写回浏览器的IO操作结束后，把写回去的信息打印出来
+                // 暂时没用到，这里是写回浏览器的IO操作结束后，进行的处理
                 // TODO 后续有时间的话，尝试把阻塞式请求远程服务器的逻辑也改成 IOCP, hh
 
-                puts(ioContext->buffer);
-                fflush(stdout);
+//                puts("WWWWWW");
+//                puts(ioContext->buffer);
+//                puts("EEEE");
+//                fflush(stdout);
 
                 break;
             }
