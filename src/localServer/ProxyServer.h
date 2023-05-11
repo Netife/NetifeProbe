@@ -17,7 +17,7 @@
 #pragma comment(lib, "Ws2_32.lib")
 
 #define ALT_PORT 43010
-constexpr static size_t MaxBufferSize = 1024 * 1; // 最大缓冲区尺寸
+constexpr static size_t MaxBufferSize = 10; // 1024 * 1; // 最大缓冲区尺寸
 constexpr static size_t NumberOfThreads = 100; // 线程池线程数量
 
 
@@ -33,12 +33,16 @@ enum class EventIOType {
 // 用于重叠IO
 struct IOContext {
     OVERLAPPED overlapped{};
-    WSABUF wsaBuf{MaxBufferSize, buffer};
-    CHAR buffer[MaxBufferSize]{};
+    CHAR* buffer = nullptr; //[MaxBufferSize];// = new CHAR[MaxBufferSize];  // [MaxBufferSize]{};
+    WSABUF wsaBuf{MaxBufferSize, buffer}; // 后面赋值，这里只是说明相关性
     EventIOType type{};
     SOCKET socket = INVALID_SOCKET;
     DWORD nBytes = 0;
     sockaddr_in addr{};
+    SOCKET altSocket = INVALID_SOCKET; // 过渡使用的，传递最开始的 accept 后的socket
+    UINT16 seq = 1; // seq:6 = 1;
+    // 一个tcp数据包理论最大值是 65535，1024 * 60，2 的 6 次方是64，刚好可以容纳
+    // TODO 后续有时间将 C++ 版本提升至20 并使用使用位域重构
 };
 
 
