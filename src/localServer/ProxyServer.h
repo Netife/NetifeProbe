@@ -39,6 +39,7 @@ struct IOContext {
     SOCKET socket = INVALID_SOCKET;
     DWORD nBytes = 0;
     sockaddr_in addr{};
+    SOCKET altSocket = INVALID_SOCKET; // 过渡使用的，传递最开始的 accept 后的socket
     UINT16 seq = 1; // seq:6 = 1;
     // 一个tcp数据包理论最大值是 65535，1024 * 60，2 的 6 次方是64，刚好可以容纳
     // TODO 后续有时间将 C++ 版本提升至20 并使用使用位域重构
