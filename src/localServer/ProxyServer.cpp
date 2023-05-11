@@ -1,4 +1,5 @@
 #include "ProxyServer.h"
+#include <cassert>
 
 
 using namespace std;
@@ -93,7 +94,10 @@ ProxyServer::~ProxyServer() {
     // 有多少个线程就发送 post 多少次，让工作线程收到事件并主动退出
     void *lpCompletionKey = nullptr;
     for (size_t i = 0; i < NumberOfThreads; i++) {
-        PostQueuedCompletionStatus(hIOCP, -1, (ULONG_PTR) lpCompletionKey, nullptr);
+        PostQueuedCompletionStatus(hIOCP,
+                                   -1,
+                                   (ULONG_PTR) lpCompletionKey,
+                                   nullptr);
     }
 
     acceptThread.join();
@@ -191,7 +195,10 @@ void ProxyServer::acceptWorkerThread() {
         // 开始接受请求，这里执行第一次异步接收，之后的请求处理交给工作线程来完成
         DWORD nBytes = MaxBufferSize;
         DWORD dwFlags = 0;
-        auto ioContext = new IOContext();
+        auto ioContext = new IOContext;
+        ioContext->buffer = new CHAR[MaxBufferSize]{};
+        ioContext->wsaBuf = {MaxBufferSize, ioContext->buffer};
+
         ioContext->socket = clientSocket;
         ioContext->type = EventIOType::ServerIORead;
         ioContext->addr = clientSocketAddr;
@@ -213,7 +220,6 @@ void ProxyServer::acceptWorkerThread() {
             ioContext = nullptr;
         }
 
-
     }
 }
 
@@ -224,8 +230,9 @@ void ProxyServer::eventWorkerThread() {
     DWORD lpNumberOfBytesTransferred = 0;
     void *lpCompletionKey = nullptr;
 
+    // 只是临时存储
     DWORD dwFlags = 0;
-//    DWORD nBytes = MaxBufferSize;
+    DWORD nBytes = MaxBufferSize;
 
     while (true) {
         // 接收到前面 WSARecv 的 IO 完成通知
@@ -244,16 +251,76 @@ void ProxyServer::eventWorkerThread() {
         // 没有可操作数据
         if (lpNumberOfBytesTransferred == 0) continue;
 
-        // 读到，或者写入的字节总数
-        ioContext->nBytes = lpNumberOfBytesTransferred;
+        cout << ioContext->nBytes<<endl;
+        // 读取或者发送的字节长度，这里 += 是累计之前的所有数据
+        ioContext->nBytes += lpNumberOfBytesTransferred;
         // 这里的字节数统计有问题，，，
         // 没有问题，但是没有记录最后的\0，需要手动记录上（或者说EOF？）！
 
 
-        cout << "iocp " << lpNumberOfBytesTransferred << endl;
+        cerr << "iocp " << lpNumberOfBytesTransferred << endl;
         // 处理对应的事件
         switch (ioContext->type) {
             case EventIOType::ServerIORead: {
+
+                /*****************************************************************
+                 * 可能会存在缓冲区不够的问题，必须保证请求全部接受完毕才能发送!!            *
+                 * 我修改 IOContext->buf 为动态分配的缓冲区，以便在这里改变尺寸           *
+                 *****************************************************************/
+
+                // 如果缓冲区满了
+                if (MaxBufferSize == lpNumberOfBytesTransferred) {
+
+                    // 重新生成 IOContext
+                    auto newIOContent = new IOContext;
+                    newIOContent->socket = ioContext->socket;
+                    newIOContent->addr = ioContext->addr;
+                    newIOContent->type = ioContext->type;
+                    // 每次开辟内存 以 MaxBufferSize 为单位递增
+                    newIOContent->buffer = new CHAR[MaxBufferSize * (ioContext->seq + 1)];
+                    newIOContent->wsaBuf = { // 将要存放数据的地址范围以这里为准
+                            static_cast<ULONG>(MaxBufferSize),
+                            newIOContent->buffer + MaxBufferSize * (ioContext->seq)
+                    };
+                    newIOContent->overlapped = ioContext->overlapped;
+                    newIOContent->seq = ioContext->seq + 1;
+                    newIOContent->nBytes = ioContext->nBytes;
+
+                    // 相比 memcpy 不会出现内存地址重叠时拷贝覆盖的情况
+                    memmove(newIOContent->buffer,
+                            ioContext->buffer,
+                            MaxBufferSize * ioContext->seq);
+                    // 释放旧的IO上下文指针空间
+                    delete[] ioContext->buffer;
+                    ioContext->buffer = nullptr;
+                    delete[] ioContext;
+                    ioContext = nullptr;
+
+                    // 使用新的 IOContent 继续发送
+                    auto rtOfReceive = WSARecv(
+                            newIOContent->socket,
+                            &newIOContent->wsaBuf, // 数据放在这里
+                            1,
+                            &nBytes, // 接收到的数据长度,不过这里不修改重叠结构，通知的时候再修改
+                            &dwFlags,
+                            &newIOContent->overlapped,
+                            nullptr);
+                    auto err = WSAGetLastError();
+                    if (SOCKET_ERROR == rtOfReceive && ERROR_IO_PENDING != err) {
+                        std::cerr << "err0 receive" << std::endl;
+                        // 发生不为 ERROR_IO_PENDING 的错误
+                        shutdown(newIOContent->socket, SD_BOTH);
+                        closesocket(newIOContent->socket);
+                        delete newIOContent;
+                        newIOContent = nullptr;
+                    }
+
+                    // 跳过下面的逻辑
+                    continue;
+
+
+                }
+                // 到这里说明成功把所有请求读取完毕
 
 
                 // 打印读到数据的ip
@@ -286,9 +353,12 @@ void ProxyServer::eventWorkerThread() {
                 fflush(stdout);
 
 
-                // 请求远程服务器
+
+
+                // 开始请求远程服务器
                 WSADATA wsaData;
-                WSAStartup(MAKEWORD(2, 2), &wsaData);
+                auto initWSARt = WSAStartup(MAKEWORD(2, 2), &wsaData);
+                assert(0 == initWSARt);
 
 
                 sockaddr_in remoteServerAddr{};
@@ -412,7 +482,7 @@ void ProxyServer::eventWorkerThread() {
 //                }
             }
                 break;
-            case EventIOType::ServerIOWrite:{
+            case EventIOType::ServerIOWrite: {
                 // 暂时没用到，这里是写回浏览器的IO操作结束后，进行的处理
                 // TODO 后续有时间的话，尝试把阻塞式请求远程服务器的逻辑也改成 IOCP, hh
 
@@ -424,14 +494,14 @@ void ProxyServer::eventWorkerThread() {
                 break;
             }
 
-            case EventIOType::ClientIORead:{
+            case EventIOType::ClientIORead: {
 
 
                 break;
             }
 
 
-            case EventIOType::ClientIOWrite:{
+            case EventIOType::ClientIOWrite: {
 
 
                 break;
