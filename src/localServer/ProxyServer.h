@@ -21,10 +21,12 @@ constexpr static size_t MaxBufferSize = 1024 * 1; // 最大缓冲区尺寸
 constexpr static size_t NumberOfThreads = 100; // 线程池线程数量
 
 
-// 用于标识事件的类型
-enum class IOType {
-    Read,
-    Write
+// 用于标识IO事件的类型，不与宏定义冲突
+enum class EventIOType {
+    ServerIORead, // 代理服务器作为服务器端时的 IO 读
+    ServerIOWrite,
+    ClientIORead, // 代理服务器作为客户端时的 IO 读
+    ClientIOWrite
 };
 
 
@@ -33,7 +35,7 @@ struct IOContext {
     OVERLAPPED overlapped{};
     WSABUF wsaBuf{MaxBufferSize, buffer};
     CHAR buffer[MaxBufferSize]{};
-    IOType type{};
+    EventIOType type{};
     SOCKET socket = INVALID_SOCKET;
     DWORD nBytes = 0;
     sockaddr_in addr{};

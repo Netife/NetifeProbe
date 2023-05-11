@@ -11,7 +11,7 @@ using namespace std;
 
 //#define PROXY_PORT 34010
 #define PROXY_PORT 9999
-//#define SSL_SERVER_PORT 443
+#define SSL_SERVER_PORT 443
 #define SERVER_PORT 80
 
 
@@ -42,9 +42,9 @@ int main() {
     ) ->int{
 
 
-//        newData = originData;
+        newData = originData;
 
-//        return 0;
+        return 0;
         auto serverIp = serverAddr.S_un.S_un_b;
 //    bool isTar = (int)serverIp.s_b1 == 216&&
 //                 (int)serverIp.s_b2 == 127&&

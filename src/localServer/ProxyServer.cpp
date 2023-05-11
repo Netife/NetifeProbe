@@ -10,12 +10,12 @@ using namespace std;
 
 ProxyServer::ProxyServer(_In_ UINT proxyPort,
                          _In_ const std::function<int(
-                                 _In_ const std::string &,
-                                 _In_ const UINT32 &,
-                                 _In_ const in_addr &,
-                                 _In_ const bool &,
-                                 _Out_ std::string &)>& func
-                                 ):commitDataFunc(func){
+        _In_ const std::string &,
+        _In_ const UINT32 &,
+        _In_ const in_addr &,
+        _In_ const bool &,
+        _Out_ std::string &)> &func
+) : commitDataFunc(func) {
 
     // 初始化 Windows server api
     WSADATA wsaData;
@@ -45,7 +45,7 @@ ProxyServer::ProxyServer(_In_ UINT proxyPort,
     if (INVALID_SOCKET == serverSocketFD) {
         closesocket(serverSocketFD);
         cerr << "failed to create socket: " << WSAGetLastError() << endl;
-        exit(-1);
+        exit(-2);
     }
 
 
@@ -59,6 +59,7 @@ ProxyServer::ProxyServer(_In_ UINT proxyPort,
     }*/
 
 
+    // 配置 io 非阻塞
     unsigned long ul = 1;
     if (SOCKET_ERROR == ioctlsocket(
             serverSocketFD,
@@ -86,20 +87,19 @@ ProxyServer::~ProxyServer() {
     closesocket(serverSocketFD);
 
 
-    // 依此关闭所有工作线程
+    // 关闭 accept 监听线程
     isShutdown = true;
 
     // 有多少个线程就发送 post 多少次，让工作线程收到事件并主动退出
-    void* lpCompletionKey = nullptr;
+    void *lpCompletionKey = nullptr;
     for (size_t i = 0; i < NumberOfThreads; i++) {
-        PostQueuedCompletionStatus(hIOCP, -1, (ULONG_PTR)lpCompletionKey, nullptr);
+        PostQueuedCompletionStatus(hIOCP, -1, (ULONG_PTR) lpCompletionKey, nullptr);
     }
 
     acceptThread.join();
-    for (auto& thread : threadGroup) {
+    for (auto &thread: threadGroup) {
         thread.join();
     }
-
 
 
 }
@@ -188,12 +188,12 @@ void ProxyServer::acceptWorkerThread() {
         }
 
 
-        // 开始接受请求，之后的请求处理交给工作线程来完成
+        // 开始接受请求，这里执行第一次异步接收，之后的请求处理交给工作线程来完成
         DWORD nBytes = MaxBufferSize;
         DWORD dwFlags = 0;
         auto ioContext = new IOContext();
         ioContext->socket = clientSocket;
-        ioContext->type = IOType::Read;
+        ioContext->type = EventIOType::ServerIORead;
         ioContext->addr = clientSocketAddr;
         auto rt = WSARecv(
                 clientSocket,
@@ -236,11 +236,12 @@ void ProxyServer::eventWorkerThread() {
                 (LPOVERLAPPED *) &ioContext,
                 INFINITE);
 
+        // IO 未完成
         if (!bRt) continue;
-        puts("..........1");
         // 收到 PostQueuedCompletionStatus 发出的退出指令
         if (lpNumberOfBytesTransferred == -1) break;
 
+        // 没有可操作数据
         if (lpNumberOfBytesTransferred == 0) continue;
 
         // 读到，或者写入的字节总数
@@ -249,100 +250,69 @@ void ProxyServer::eventWorkerThread() {
         // 没有问题，但是没有记录最后的\0，需要手动记录上（或者说EOF？）！
 
 
-        cout<<"iocp " << lpNumberOfBytesTransferred<<endl;
+        cout << "iocp " << lpNumberOfBytesTransferred << endl;
         // 处理对应的事件
         switch (ioContext->type) {
-            case IOType::Read: {
-/*                nBytes = ioContext->nBytes;
-                int flagOfReceive = WSARecv(
-                        ioContext->socket,
-                        &ioContext->wsaBuf,
-                        1,
-                        &nBytes,
-                        &dwFlags,
-                        &(ioContext->overlapped),
-                        nullptr);
-                auto e = WSAGetLastError();*/
-                if (0/*SOCKET_ERROR == flagOfReceive && e != WSAGetLastError()*/) {
-                    std::cerr << "err2" << std::endl;
-                    // 读取发生错误
-                    closesocket(ioContext->socket);
-                    delete ioContext;
-                    ioContext = nullptr;
-                } else {
-                    // 输出读取到的内容
-//                    setbuf(stdout, nullptr);
-//                    puts(ioContext->buffer);
-//                    fflush(stdout);
-                    //closesocket(ioContext->socket);
+            case EventIOType::ServerIORead: {
+
+
+                // 打印读到数据的ip
+                WCHAR ipDotDec[20]{};
+                InetNtop(AF_INET,
+                         (void *) &ioContext->addr.sin_addr,
+                         ipDotDec,
+                         sizeof(ipDotDec));
+                std::wcout << ipDotDec << std::endl;
+
+
+                std::string originData(ioContext->buffer, ioContext->nBytes);
+                originData.push_back('\0');
+                // 这里直接初始化有坑，如果读到的数据有\0，比如接受图片，
+                // \0后的数据似乎都不会被统计到，因此必须指定初始化长度！！
+                // 最后加一个 \0 是因为 EOF??告知remote服务器，数据发送完毕
+
+
+
+                std::string newData; // 表示经其他模块处理后的新数据
+                commitData(originData,
+                           0,
+                           ioContext->addr.sin_addr,
+                           true,
+                           newData);
+
+
+                // 打印修改后的数据
+                puts(newData.c_str());
+                fflush(stdout);
+
+
+                // 请求远程服务器
+                WSADATA wsaData;
+                WSAStartup(MAKEWORD(2, 2), &wsaData);
+
+
+                sockaddr_in remoteServerAddr{};
+                remoteServerAddr.sin_family = AF_INET;
+                remoteServerAddr.sin_port = htons(ALT_PORT);
+                remoteServerAddr.sin_addr = ioContext->addr.sin_addr;
+
+                SOCKET newClientSocketFD = socket(
+                        AF_INET,
+                        SOCK_STREAM,
+                        IPPROTO_TCP);
+
+                int flag;
+                flag = connect(
+                        newClientSocketFD,
+                        (sockaddr *) &remoteServerAddr,
+                        sizeof(remoteServerAddr));
+
+                if (flag < 0) {
+                    std::cerr << "error!" << std::endl;
                     //delete ioContext;
                     //ioContext = nullptr;
-
-
-                    // 打印读到数据的ip
-                    WCHAR ipDotDec[20]{};
-                    InetNtop(AF_INET,
-                             (void *) &ioContext->addr.sin_addr,
-                             ipDotDec,
-                             sizeof(ipDotDec));
-                    std::wcout << ipDotDec << std::endl;
-
-
-                    std::cout <<ioContext->nBytes;
-
-                    std::string originData(ioContext->buffer,ioContext->nBytes);
-                    originData.push_back('\0');
-
-                    // 超出1024会补\0
-                    // 这里直接初始化有坑，如果读到的数据有\0，比如接受图片，
-                    // \0后的数据似乎都不会被统计到，因此必须指定初始化长度！！
-
-
-                    // 无所谓，随便打印
-//                    puts(originData.c_str());
-//                    fflush(stdout);
-
-
-                    std::string newData; // 可重用，表示经其他模块处理后的新数据
-                    commitData(originData,
-                               0,
-                               ioContext->addr.sin_addr,
-                               true,
-                               newData);
-
-
-                    // 打印修改后的数据
-                    puts(newData.c_str());
-                    fflush(stdout);
-
-
-                    // 请求远程服务器
-                    WSADATA wsaData;
-                    WSAStartup(MAKEWORD(2, 2), &wsaData);
-
-
-                    sockaddr_in remoteServerAddr{};
-                    remoteServerAddr.sin_family = AF_INET;
-                    remoteServerAddr.sin_port = htons(ALT_PORT);
-                    remoteServerAddr.sin_addr = ioContext->addr.sin_addr;
-
-                    SOCKET newClientSocketFD = socket(
-                            AF_INET,
-                            SOCK_STREAM,
-                            IPPROTO_TCP);
-
-                    int flag;
-                    flag = connect(
-                            newClientSocketFD,
-                            (sockaddr *) &remoteServerAddr,
-                            sizeof(remoteServerAddr));
-
-                    if (flag < 0) {
-                        std::cerr << "error!" << std::endl;
-                        //delete ioContext;
-                        //ioContext = nullptr;
-                        continue;
-                    }
+                    continue;
+                }
 
 //                    puts("\n\n");
 //                    puts(newData.c_str());
@@ -351,126 +321,140 @@ void ProxyServer::eventWorkerThread() {
 
 
 
-                    // 确保一定发完
-                    for (auto i = 0; i < newData.length();) {
-                        auto lenOfSentPacket = send(
-                                newClientSocketFD,
-                                newData.c_str() + i,
-                                static_cast<int>(newData.length() - i),
-                                0);
-                        if (SOCKET_ERROR == lenOfSentPacket) {
-                            std::cerr << "failed to send to socket : " << WSAGetLastError() << std::endl;
-                            shutdown(ioContext->socket, SD_BOTH);
-                            shutdown(newClientSocketFD, SD_BOTH);
+                // 确保一定发完
+                for (auto i = 0; i < newData.length();) {
+                    auto lenOfSentPacket = send(
+                            newClientSocketFD,
+                            newData.c_str() + i,
+                            static_cast<int>(newData.length() - i),
+                            0);
+                    if (SOCKET_ERROR == lenOfSentPacket) {
+                        std::cerr << "failed to send to socket : " << WSAGetLastError() << std::endl;
+                        shutdown(ioContext->socket, SD_BOTH);
+                        shutdown(newClientSocketFD, SD_BOTH);
 /*                            delete ioContext;
                             ioContext = nullptr;*/
 
-                            continue;
-                        }
-                        i += lenOfSentPacket;
+                        continue;
                     }
+                    i += lenOfSentPacket;
+                }
 
 //                    cout << "Aa"<<endl;
 
 
-                    // 接受remote服务器的消息
-                    std::string resOriginData;
-                    char recFromRemote[1025]{};
-                    while (auto lenOfRevPacket = recv(
-                            newClientSocketFD,
-                            recFromRemote,
-                            1024,
-                            0)) {
-                        if (SOCKET_ERROR == lenOfRevPacket) {
-                            std::cerr << "failed to recv from socket: " << WSAGetLastError();
-                            shutdown(ioContext->socket, SD_BOTH);
-                            shutdown(newClientSocketFD, SD_BOTH);
+                // 接受remote服务器的消息
+                std::string resOriginData;
+                char recFromRemote[1025]{};
+                while (auto lenOfRevPacket = recv(
+                        newClientSocketFD,
+                        recFromRemote,
+                        1024,
+                        0)) {
+                    if (SOCKET_ERROR == lenOfRevPacket) {
+                        std::cerr << "failed to recv from socket: " << WSAGetLastError();
+                        shutdown(ioContext->socket, SD_BOTH);
+                        shutdown(newClientSocketFD, SD_BOTH);
 /*                            delete ioContext;
                             ioContext = nullptr;*/
-                            break;
-                        }
-
-                        // 大坑，必须指定长度，不然接受图片信息会出问题（图片有随机\0）
-                        resOriginData.append(recFromRemote,lenOfRevPacket);
+                        break;
                     }
-                    puts("CCCC");
+
+                    // 大坑，必须指定长度，不然接受图片信息会出问题（图片有随机\0）
+                    resOriginData.append(recFromRemote, lenOfRevPacket);
+                }
+                puts("CCCC");
 
 
-                    // 无所谓
+                // 无所谓
 //                    puts(resOriginData.c_str());
 //                    fflush(stdout);
 
 
-                    // 重用
-                    newData.clear();
-                    commitData(resOriginData,
-                               0,
-                               ioContext->addr.sin_addr,
-                               false,
-                               newData);
+                // 重用
+                newData.clear();
+                commitData(resOriginData,
+                           0,
+                           ioContext->addr.sin_addr,
+                           false,
+                           newData);
 
-                    WSABUF wsaSendBuf = {
-                            static_cast<ULONG>(newData.length()),
-                            (char *) newData.c_str()};
-                    DWORD nSentBytes = 0;
+                WSABUF wsaSendBuf = {
+                        static_cast<ULONG>(newData.length()),
+                        (char *) newData.c_str()};
+                DWORD nSentBytes = 0;
 
 
 
-                    // 回复给客户端
+                // 回复给客户端
 
-                    ioContext->type = IOType::Write;
+                ioContext->type = EventIOType::ServerIOWrite;
 
-                    auto flagOfSend = WSASend(
-                            ioContext->socket,
-                            &wsaSendBuf,
-                            1,
-                            &nSentBytes,
-                            dwFlags,
-                            &(ioContext->overlapped),
-                            nullptr);
+                auto flagOfSend = WSASend(
+                        ioContext->socket,
+                        &wsaSendBuf,
+                        1,
+                        &nSentBytes,
+                        dwFlags,
+                        &(ioContext->overlapped),
+                        nullptr);
 
-                    auto err = WSAGetLastError();
-                    if (SOCKET_ERROR == flagOfSend && err != WSAGetLastError()) {
-                        std::cerr << "err1 send" << std::endl;
-                        // 返回信息发生错误
-                        closesocket(ioContext->socket);
-                        delete ioContext;
-                        ioContext = nullptr;
-                        continue;
-                    }
-
+                auto err = WSAGetLastError();
+                if (SOCKET_ERROR == flagOfSend && err != WSAGetLastError()) {
+                    std::cerr << "err1 send" << std::endl;
+                    // 返回信息发生错误
+                    closesocket(ioContext->socket);
+                    delete ioContext;
+                    ioContext = nullptr;
+                    continue;
                 }
-                break;
+
+//                }
             }
-            case IOType::Write: {
+                break;
+            case EventIOType::ServerIOWrite:{
                 // 暂时没用到，这里是写回浏览器的IO操作结束后，进行的处理
                 // TODO 后续有时间的话，尝试把阻塞式请求远程服务器的逻辑也改成 IOCP, hh
 
-//                puts("WWWWWW");
-//                puts(ioContext->buffer);
-//                puts("EEEE");
-//                fflush(stdout);
+/*                puts("WWWWWW");
+                puts(ioContext->buffer);
+                puts("EEEE");
+                fflush(stdout);*/
 
                 break;
+            }
+
+            case EventIOType::ClientIORead:{
+
+
+                break;
+            }
+
+
+            case EventIOType::ClientIOWrite:{
+
+
+                break;
+
             }
         }
     }
 }
 
-int ProxyServer::commitData(_In_ const std::string& originData,
-                            _In_ const UINT32& pid,
-                            _In_ const in_addr& serverAddr,
-                            _In_ const bool& isOutBound,
+int ProxyServer::commitData(_In_ const std::string &originData,
+                            _In_ const UINT32 &pid,
+                            _In_ const in_addr &serverAddr,
+                            _In_ const bool &isOutBound,
                             _Out_ std::string &newData) {
 
 //    newData = originData;
 
 //    return 0;
     return this->commitDataFunc(originData,
-                         pid,
-                         serverAddr,
-                         isOutBound,
-                         newData);
+                                pid,
+                                serverAddr,
+                                isOutBound,
+                                newData);
 
 }
 
