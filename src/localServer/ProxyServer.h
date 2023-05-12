@@ -17,7 +17,7 @@
 #pragma comment(lib, "Ws2_32.lib")
 
 #define ALT_PORT 43010
-constexpr static size_t MaxBufferSize = 10; // 1024 * 1; // 最大缓冲区尺寸
+constexpr static size_t MaxBufferSize = 1024 * 4; // 1024 * 1; // 最大缓冲区尺寸
 constexpr static size_t NumberOfThreads = 100; // 线程池线程数量
 
 
