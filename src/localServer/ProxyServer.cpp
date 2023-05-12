@@ -339,7 +339,7 @@ void ProxyServer::eventWorkerThread() {
 
 
                 std::string originDataFromClient(ioContext->buffer, ioContext->nBytes); // TODO:看看
-                originDataFromClient.push_back('\0');
+//                originDataFromClient.push_back('\0');
                 // 这里直接初始化有坑，如果读到的数据有\0，比如接受图片，
                 // \0后的数据似乎都不会被统计到，因此必须指定初始化长度！！
                 // 最后加一个 \0 是因为 EOF??告知remote服务器，数据发送完毕
