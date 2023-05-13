@@ -143,6 +143,15 @@ int main() {
              "(tcp.DstPort != 7890 and tcp.DstPort != 7891 and tcp.DstPort != 7892 and tcp.DstPort != 7893 and "
              "tcp.SrcPort != 7890 and tcp.SrcPort != 7891 and tcp.SrcPort != 7892 and tcp.SrcPort != 7893)");
 
+
+/*    snprintf(filter, sizeof(filter),
+             "tcp and "
+             "(tcp.DstPort == %d or tcp.DstPort == %d or tcp.DstPort == %d or "
+             "tcp.SrcPort == %d or tcp.SrcPort == %d or tcp.SrcPort == %d) and (ip.SrcAddr == 216.127.185.51 or ip.DstAddr == 216.127.185.51) ",
+             serverPort, proxyPort, altPort, serverPort, proxyPort, altPort);*/
+
+
+
     ProxyServer proxyServer(proxyPort,commitDataFunc);
     PacketDivert packetDivert(filter);
     PacketDivert sniffDivert("tcp and localPort", WINDIVERT_LAYER_FLOW,

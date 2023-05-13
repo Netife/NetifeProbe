@@ -180,7 +180,7 @@ void ProxyServer::acceptWorkerThread() {
             continue;
         }
 
-        // 创建 IOCP，和完成端口关联起来
+        // 将句柄和完成端口关联起来
         if (nullptr == CreateIoCompletionPort(
                 (HANDLE) clientSocket,
                 hIOCP,
@@ -274,24 +274,24 @@ void ProxyServer::eventWorkerThread() {
                     puts("PPPPPP");
 
                     // 重新生成 IOContext
-                    auto newIOContent = new IOContext;
-                    newIOContent->socket = ioContext->socket;
-                    newIOContent->addr = ioContext->addr;
-                    newIOContent->type = ioContext->type;
+                    auto newIOContext = new IOContext;
+                    newIOContext->socket = ioContext->socket;
+                    newIOContext->addr = ioContext->addr;
+                    newIOContext->type = ioContext->type;
                     // 每次开辟内存 以 MaxBufferSize 为单位递增
-                    newIOContent->buffer = new CHAR[MaxBufferSize * (ioContext->seq + 1)];
-                    newIOContent->wsaBuf = { // 将要存放数据的地址范围以这里为准
+                    newIOContext->buffer = new CHAR[MaxBufferSize * (ioContext->seq + 1)];
+                    newIOContext->wsaBuf = { // 将要存放数据的地址范围以这里为准
                             static_cast<ULONG>(MaxBufferSize),
-                            newIOContent->buffer + MaxBufferSize * (ioContext->seq)
+                            newIOContext->buffer + MaxBufferSize * (ioContext->seq)
                     };
-                    newIOContent->overlapped = ioContext->overlapped;
-                    newIOContent->seq = ioContext->seq + 1;
-                    newIOContent->nBytes = ioContext->nBytes;
-                    newIOContent->overlapped = ioContext->overlapped;
-                    newIOContent->altSocket = ioContext->altSocket; // 传1
+                    newIOContext->overlapped = ioContext->overlapped;
+                    newIOContext->seq = ioContext->seq + 1;
+                    newIOContext->nBytes = ioContext->nBytes;
+                    newIOContext->overlapped = ioContext->overlapped;
+                    newIOContext->altSocket = ioContext->altSocket; // 传1
 
                     // 相比 memcpy 不会出现内存地址重叠时拷贝覆盖的情况
-                    memmove(newIOContent->buffer,
+                    memmove(newIOContext->buffer,
                             ioContext->buffer,
                             MaxBufferSize * ioContext->seq);
                     // 释放旧的IO上下文指针空间
@@ -300,23 +300,23 @@ void ProxyServer::eventWorkerThread() {
                     delete[] ioContext;
                     ioContext = nullptr;
 
-                    // 使用新的 IOContent 继续发送
+                    // 使用新的 IOContext 继续发送
                     auto rtOfReceive = WSARecv(
-                            newIOContent->socket,
-                            &newIOContent->wsaBuf, // 数据放在这里
+                            newIOContext->socket,
+                            &newIOContext->wsaBuf, // 数据放在这里
                             1,
                             &nBytes, // 接收到的数据长度,不过这里不修改重叠结构，通知的时候再修改
                             &dwFlags,
-                            &newIOContent->overlapped,
+                            &newIOContext->overlapped,
                             nullptr);
                     auto err = WSAGetLastError();
                     if (SOCKET_ERROR == rtOfReceive && ERROR_IO_PENDING != err) {
                         std::cerr << "err0 receive" << std::endl;
                         // 发生不为 ERROR_IO_PENDING 的错误
-                        shutdown(newIOContent->socket, SD_BOTH);
-                        closesocket(newIOContent->socket);
-                        delete newIOContent;
-                        newIOContent = nullptr;
+                        shutdown(newIOContext->socket, SD_BOTH);
+                        closesocket(newIOContext->socket);
+                        delete newIOContext;
+                        newIOContext = nullptr;
                     }
 
                     // 跳过下面的逻辑
@@ -339,6 +339,7 @@ void ProxyServer::eventWorkerThread() {
 
 
                 std::string originDataFromClient(ioContext->buffer, ioContext->nBytes); // TODO:看看
+
 //                originDataFromClient.push_back('\0');
                 // 这里直接初始化有坑，如果读到的数据有\0，比如接受图片，
                 // \0后的数据似乎都不会被统计到，因此必须指定初始化长度！！
@@ -524,25 +525,25 @@ void ProxyServer::eventWorkerThread() {
                     puts("AAAAAAAAAGFQAGHAFDH");
 
                     // 重新生成 IOContext
-                    auto newIOContent = new IOContext;
-                    newIOContent->socket = ioContext->socket;
-                    newIOContent->addr = ioContext->addr;
-                    newIOContent->type = ioContext->type;
+                    auto newIOContext = new IOContext;
+                    newIOContext->socket = ioContext->socket;
+                    newIOContext->addr = ioContext->addr;
+                    newIOContext->type = ioContext->type;
                     // 每次开辟内存 以 MaxBufferSize 为单位递增
-                    newIOContent->buffer = new CHAR[MaxBufferSize * (ioContext->seq + 1)];
-                    newIOContent->wsaBuf = { // 将要存放数据的地址范围以这里为准
+                    newIOContext->buffer = new CHAR[MaxBufferSize * (ioContext->seq + 1)];
+                    newIOContext->wsaBuf = { // 将要存放数据的地址范围以这里为准
                             static_cast<ULONG>(MaxBufferSize),
-                            newIOContent->buffer + MaxBufferSize * (ioContext->seq)
+                            newIOContext->buffer + MaxBufferSize * (ioContext->seq)
                     };
-//                    newIOContent->overlapped = ioContext->overlapped;
-                    newIOContent->seq = ioContext->seq + 1;
-                    newIOContent->nBytes = ioContext->nBytes;
+//                    newIOContext->overlapped = ioContext->overlapped;
+                    newIOContext->seq = ioContext->seq + 1;
+                    newIOContext->nBytes = ioContext->nBytes;
 
 
-                    newIOContent->altSocket = ioContext->altSocket; // 传4
+                    newIOContext->altSocket = ioContext->altSocket; // 传4
 
                     // 相比 memcpy 不会出现内存地址重叠时拷贝覆盖的情况
-                    memmove(newIOContent->buffer,
+                    memmove(newIOContext->buffer,
                             ioContext->buffer,
                             MaxBufferSize * ioContext->seq);
                     // 释放旧的IO上下文指针空间
@@ -551,23 +552,23 @@ void ProxyServer::eventWorkerThread() {
                     delete[] ioContext;
                     ioContext = nullptr;
 
-                    // 使用新的 IOContent 继续接收
+                    // 使用新的 IOContext 继续接收
                     auto rtOfReceive = WSARecv(
-                            newIOContent->socket,
-                            &newIOContent->wsaBuf, // 数据放在这里
+                            newIOContext->socket,
+                            &newIOContext->wsaBuf, // 数据放在这里
                             1,
                             &nBytes, // 接收到的数据长度,不过这里不修改重叠结构，通知的时候再修改
                             &dwFlags,
-                            &newIOContent->overlapped,
+                            &newIOContext->overlapped,
                             nullptr);
                     auto err = WSAGetLastError();
                     if (SOCKET_ERROR == rtOfReceive && ERROR_IO_PENDING != err) {
                         std::cerr << "err0 receive" << std::endl;
                         // 发生不为 ERROR_IO_PENDING 的错误
-                        shutdown(newIOContent->socket, SD_BOTH);
-                        closesocket(newIOContent->socket);
-                        delete newIOContent;
-                        newIOContent = nullptr;
+                        shutdown(newIOContext->socket, SD_BOTH);
+                        closesocket(newIOContext->socket);
+                        delete newIOContext;
+                        newIOContext = nullptr;
                     }
 
                     // 跳过下面的逻辑
