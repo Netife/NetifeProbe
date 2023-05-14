@@ -5,9 +5,13 @@
 #include <grpcpp/create_channel.h>
 #include "../gRpcServices/NetifePostClientImpl.h"
 
+#include "Poco/UUID.h"
+#include "Poco/UUIDGenerator.h"
+
 
 using namespace std;
-
+using Poco::UUID;
+using Poco::UUIDGenerator;
 
 //#define PROXY_PORT 34010
 #define PROXY_PORT 9999
@@ -44,21 +48,16 @@ int main() {
 
         newData = originData;
 
-        return 0;
         auto serverIp = serverAddr.S_un.S_un_b;
-//    bool isTar = (int)serverIp.s_b1 == 216&&
-//                 (int)serverIp.s_b2 == 127&&
-//                 (int)serverIp.s_b3 == 185&&
-//                 (int)serverIp.s_b4 == 51;
 
         cout << "local application pid is: " << pid << endl;
 
-
         NetifeProbeRequest netifeProbeRequest;
 
-        //TODO 添加 uuid
+        UUIDGenerator& generator = UUIDGenerator::defaultGenerator();
+        Poco::UUID uuid(generator.create());
 
-        netifeProbeRequest.set_uuid("this_is_uuid");
+        netifeProbeRequest.set_uuid(uuid.toString());
 
         //添加 originDqta
         std::string rawText;
@@ -76,7 +75,12 @@ int main() {
 
         //TODO 支持SERVER修改
 
-        netifeProbeRequest.set_application_type(NetifeMessage::NetifeProbeRequest_ApplicationType_CLIENT);
+        if (isOutBound){
+            netifeProbeRequest.set_application_type(NetifeMessage::NetifeProbeRequest_ApplicationType_CLIENT);
+        }else{
+            netifeProbeRequest.set_application_type(NetifeMessage::NetifeProbeRequest_ApplicationType_SERVER);
+        }
+
 
         auto response = client.ProcessProbe(netifeProbeRequest);
 

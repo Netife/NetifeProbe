@@ -15,7 +15,7 @@ find_package(gRPC REQUIRED)
 find_package(Protobuf REQUIRED)
 
 # UUID
-# find_package(stduuid CONFIG REQUIRED)
+find_package(Poco REQUIRED Foundation)
 
 include_directories(./lib)
 link_directories(./lib)
@@ -34,7 +34,7 @@ add_executable(NetifeProbe src/main.cpp
 target_link_libraries(NetifeProbe PRIVATE
         gRPC::grpc++ gRPC::grpc++_reflection gRPC::gpr gRPC::grpc
         protobuf::libprotoc protobuf::libprotobuf protobuf::libprotobuf-lite)
-
+target_link_libraries(NetifeProbe PRIVATE Poco::Foundation)
 # divert
 target_link_libraries(NetifeProbe PRIVATE WinDivert.lib Ws2_32 shlwapi)
 
