@@ -222,8 +222,47 @@ struct NetifeScriptDebuggerResponseDefaultTypeInternal {
   };
 };
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 NetifeScriptDebuggerResponseDefaultTypeInternal _NetifeScriptDebuggerResponse_default_instance_;
+PROTOBUF_CONSTEXPR NetifeScriptCommandRequest_ParamsEntry_DoNotUse::NetifeScriptCommandRequest_ParamsEntry_DoNotUse(
+    ::_pbi::ConstantInitialized) {}
+struct NetifeScriptCommandRequest_ParamsEntry_DoNotUseDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR NetifeScriptCommandRequest_ParamsEntry_DoNotUseDefaultTypeInternal()
+      : _instance(::_pbi::ConstantInitialized{}) {}
+  ~NetifeScriptCommandRequest_ParamsEntry_DoNotUseDefaultTypeInternal() {}
+  union {
+    NetifeScriptCommandRequest_ParamsEntry_DoNotUse _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 NetifeScriptCommandRequest_ParamsEntry_DoNotUseDefaultTypeInternal _NetifeScriptCommandRequest_ParamsEntry_DoNotUse_default_instance_;
+PROTOBUF_CONSTEXPR NetifeScriptCommandRequest::NetifeScriptCommandRequest(
+    ::_pbi::ConstantInitialized): _impl_{
+    /*decltype(_impl_.params_)*/{::_pbi::ConstantInitialized()}
+  , /*decltype(_impl_.script_name_)*/{&::_pbi::fixed_address_empty_string, ::_pbi::ConstantInitialized{}}
+  , /*decltype(_impl_.export_function_)*/{&::_pbi::fixed_address_empty_string, ::_pbi::ConstantInitialized{}}
+  , /*decltype(_impl_._cached_size_)*/{}} {}
+struct NetifeScriptCommandRequestDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR NetifeScriptCommandRequestDefaultTypeInternal()
+      : _instance(::_pbi::ConstantInitialized{}) {}
+  ~NetifeScriptCommandRequestDefaultTypeInternal() {}
+  union {
+    NetifeScriptCommandRequest _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 NetifeScriptCommandRequestDefaultTypeInternal _NetifeScriptCommandRequest_default_instance_;
+PROTOBUF_CONSTEXPR NetifeScriptCommandResponse::NetifeScriptCommandResponse(
+    ::_pbi::ConstantInitialized): _impl_{
+    /*decltype(_impl_.result_)*/{&::_pbi::fixed_address_empty_string, ::_pbi::ConstantInitialized{}}
+  , /*decltype(_impl_._cached_size_)*/{}} {}
+struct NetifeScriptCommandResponseDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR NetifeScriptCommandResponseDefaultTypeInternal()
+      : _instance(::_pbi::ConstantInitialized{}) {}
+  ~NetifeScriptCommandResponseDefaultTypeInternal() {}
+  union {
+    NetifeScriptCommandResponse _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 NetifeScriptCommandResponseDefaultTypeInternal _NetifeScriptCommandResponse_default_instance_;
 }  // namespace NetifeMessage
-static ::_pb::Metadata file_level_metadata_NetifeMessage_2eproto[12];
+static ::_pb::Metadata file_level_metadata_NetifeMessage_2eproto[15];
 static const ::_pb::EnumDescriptor* file_level_enum_descriptors_NetifeMessage_2eproto[4];
 static constexpr ::_pb::ServiceDescriptor const** file_level_service_descriptors_NetifeMessage_2eproto = nullptr;
 
@@ -390,6 +429,32 @@ const uint32_t TableStruct_NetifeMessage_2eproto::offsets[] PROTOBUF_SECTION_VAR
   ~0u,  // no _inlined_string_donated_
   PROTOBUF_FIELD_OFFSET(::NetifeMessage::NetifeScriptDebuggerResponse, _impl_.ws_addr_),
   PROTOBUF_FIELD_OFFSET(::NetifeMessage::NetifeScriptDebuggerResponse, _impl_.ws_port_),
+  PROTOBUF_FIELD_OFFSET(::NetifeMessage::NetifeScriptCommandRequest_ParamsEntry_DoNotUse, _has_bits_),
+  PROTOBUF_FIELD_OFFSET(::NetifeMessage::NetifeScriptCommandRequest_ParamsEntry_DoNotUse, _internal_metadata_),
+  ~0u,  // no _extensions_
+  ~0u,  // no _oneof_case_
+  ~0u,  // no _weak_field_map_
+  ~0u,  // no _inlined_string_donated_
+  PROTOBUF_FIELD_OFFSET(::NetifeMessage::NetifeScriptCommandRequest_ParamsEntry_DoNotUse, key_),
+  PROTOBUF_FIELD_OFFSET(::NetifeMessage::NetifeScriptCommandRequest_ParamsEntry_DoNotUse, value_),
+  0,
+  1,
+  ~0u,  // no _has_bits_
+  PROTOBUF_FIELD_OFFSET(::NetifeMessage::NetifeScriptCommandRequest, _internal_metadata_),
+  ~0u,  // no _extensions_
+  ~0u,  // no _oneof_case_
+  ~0u,  // no _weak_field_map_
+  ~0u,  // no _inlined_string_donated_
+  PROTOBUF_FIELD_OFFSET(::NetifeMessage::NetifeScriptCommandRequest, _impl_.script_name_),
+  PROTOBUF_FIELD_OFFSET(::NetifeMessage::NetifeScriptCommandRequest, _impl_.export_function_),
+  PROTOBUF_FIELD_OFFSET(::NetifeMessage::NetifeScriptCommandRequest, _impl_.params_),
+  ~0u,  // no _has_bits_
+  PROTOBUF_FIELD_OFFSET(::NetifeMessage::NetifeScriptCommandResponse, _internal_metadata_),
+  ~0u,  // no _extensions_
+  ~0u,  // no _oneof_case_
+  ~0u,  // no _weak_field_map_
+  ~0u,  // no _inlined_string_donated_
+  PROTOBUF_FIELD_OFFSET(::NetifeMessage::NetifeScriptCommandResponse, _impl_.result_),
 };
 static const ::_pbi::MigrationSchema schemas[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) = {
   { 0, 19, -1, sizeof(::NetifeMessage::NetifeProbeRequest)},
@@ -404,6 +469,9 @@ static const ::_pbi::MigrationSchema schemas[] PROTOBUF_SECTION_VARIABLE(protode
   { 139, -1, -1, sizeof(::NetifeMessage::NetifeScriptRegisterResponse)},
   { 147, -1, -1, sizeof(::NetifeMessage::NetifeScriptDebuggerRequest)},
   { 154, -1, -1, sizeof(::NetifeMessage::NetifeScriptDebuggerResponse)},
+  { 162, 170, -1, sizeof(::NetifeMessage::NetifeScriptCommandRequest_ParamsEntry_DoNotUse)},
+  { 172, -1, -1, sizeof(::NetifeMessage::NetifeScriptCommandRequest)},
+  { 181, -1, -1, sizeof(::NetifeMessage::NetifeScriptCommandResponse)},
 };
 
 static const ::_pb::Message* const file_default_instances[] = {
@@ -419,6 +487,9 @@ static const ::_pb::Message* const file_default_instances[] = {
   &::NetifeMessage::_NetifeScriptRegisterResponse_default_instance_._instance,
   &::NetifeMessage::_NetifeScriptDebuggerRequest_default_instance_._instance,
   &::NetifeMessage::_NetifeScriptDebuggerResponse_default_instance_._instance,
+  &::NetifeMessage::_NetifeScriptCommandRequest_ParamsEntry_DoNotUse_default_instance_._instance,
+  &::NetifeMessage::_NetifeScriptCommandRequest_default_instance_._instance,
+  &::NetifeMessage::_NetifeScriptCommandResponse_default_instance_._instance,
 };
 
 const char descriptor_table_protodef_NetifeMessage_2eproto[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) =
@@ -475,30 +546,39 @@ const char descriptor_table_protodef_NetifeMessage_2eproto[] PROTOBUF_SECTION_VA
   "result\030\002 \001(\t\"2\n\033NetifeScriptDebuggerRequ"
   "est\022\023\n\013script_name\030\001 \001(\t\"@\n\034NetifeScript"
   "DebuggerResponse\022\017\n\007ws_addr\030\001 \001(\t\022\017\n\007ws_"
-  "port\030\002 \001(\t2\315\004\n\rNetifeService\022U\n\014ProcessP"
-  "robe\022!.NetifeMessage.NetifeProbeRequest\032"
-  "\".NetifeMessage.NetifeProbeResponse\022W\n\010R"
-  "egister\022$.NetifeMessage.NetifeRegisterRe"
-  "quest\032%.NetifeMessage.NetifeRegisterResp"
-  "onse\022W\n\010Composer\022$.NetifeMessage.NetifeC"
-  "omposerRequest\032%.NetifeMessage.NetifeCom"
-  "poserResponse\022`\n\007Command\022).NetifeMessage"
-  ".NetifePluginCommandRequest\032*.NetifeMess"
-  "age.NetifePluginCommandResponse\022i\n\016Scrip"
-  "tRegister\022*.NetifeMessage.NetifeScriptRe"
-  "gisterRequest\032+.NetifeMessage.NetifeScri"
-  "ptRegisterResponse\022f\n\013ScriptDebug\022*.Neti"
-  "feMessage.NetifeScriptDebuggerRequest\032+."
-  "NetifeMessage.NetifeScriptDebuggerRespon"
-  "se2d\n\nNetifePost\022V\n\rUploadRequest\022!.Neti"
-  "feMessage.NetifeProbeRequest\032\".NetifeMes"
-  "sage.NetifeProbeResponseb\006proto3"
+  "port\030\002 \001(\t\"\300\001\n\032NetifeScriptCommandReques"
+  "t\022\023\n\013script_name\030\001 \001(\t\022\027\n\017export_functio"
+  "n\030\002 \001(\t\022E\n\006params\030\003 \003(\01325.NetifeMessage."
+  "NetifeScriptCommandRequest.ParamsEntry\032-"
+  "\n\013ParamsEntry\022\013\n\003key\030\001 \001(\t\022\r\n\005value\030\002 \001("
+  "\t:\0028\001\"-\n\033NetifeScriptCommandResponse\022\016\n\006"
+  "result\030\001 \001(\t2\315\004\n\rNetifeService\022U\n\014Proces"
+  "sProbe\022!.NetifeMessage.NetifeProbeReques"
+  "t\032\".NetifeMessage.NetifeProbeResponse\022W\n"
+  "\010Register\022$.NetifeMessage.NetifeRegister"
+  "Request\032%.NetifeMessage.NetifeRegisterRe"
+  "sponse\022W\n\010Composer\022$.NetifeMessage.Netif"
+  "eComposerRequest\032%.NetifeMessage.NetifeC"
+  "omposerResponse\022`\n\007Command\022).NetifeMessa"
+  "ge.NetifePluginCommandRequest\032*.NetifeMe"
+  "ssage.NetifePluginCommandResponse\022i\n\016Scr"
+  "iptRegister\022*.NetifeMessage.NetifeScript"
+  "RegisterRequest\032+.NetifeMessage.NetifeSc"
+  "riptRegisterResponse\022f\n\013ScriptDebug\022*.Ne"
+  "tifeMessage.NetifeScriptDebuggerRequest\032"
+  "+.NetifeMessage.NetifeScriptDebuggerResp"
+  "onse2\317\001\n\nNetifePost\022V\n\rUploadRequest\022!.N"
+  "etifeMessage.NetifeProbeRequest\032\".Netife"
+  "Message.NetifeProbeResponse\022i\n\020UseScript"
+  "Command\022).NetifeMessage.NetifeScriptComm"
+  "andRequest\032*.NetifeMessage.NetifeScriptC"
+  "ommandResponseb\006proto3"
   ;
 static ::_pbi::once_flag descriptor_table_NetifeMessage_2eproto_once;
 const ::_pbi::DescriptorTable descriptor_table_NetifeMessage_2eproto = {
-    false, false, 2832, descriptor_table_protodef_NetifeMessage_2eproto,
+    false, false, 3182, descriptor_table_protodef_NetifeMessage_2eproto,
     "NetifeMessage.proto",
-    &descriptor_table_NetifeMessage_2eproto_once, nullptr, 0, 12,
+    &descriptor_table_NetifeMessage_2eproto_once, nullptr, 0, 15,
     schemas, file_default_instances, TableStruct_NetifeMessage_2eproto::offsets,
     file_level_metadata_NetifeMessage_2eproto, file_level_enum_descriptors_NetifeMessage_2eproto,
     file_level_service_descriptors_NetifeMessage_2eproto,
@@ -4930,6 +5010,544 @@ void NetifeScriptDebuggerResponse::InternalSwap(NetifeScriptDebuggerResponse* ot
       file_level_metadata_NetifeMessage_2eproto[11]);
 }
 
+// ===================================================================
+
+NetifeScriptCommandRequest_ParamsEntry_DoNotUse::NetifeScriptCommandRequest_ParamsEntry_DoNotUse() {}
+NetifeScriptCommandRequest_ParamsEntry_DoNotUse::NetifeScriptCommandRequest_ParamsEntry_DoNotUse(::PROTOBUF_NAMESPACE_ID::Arena* arena)
+    : SuperType(arena) {}
+void NetifeScriptCommandRequest_ParamsEntry_DoNotUse::MergeFrom(const NetifeScriptCommandRequest_ParamsEntry_DoNotUse& other) {
+  MergeFromInternal(other);
+}
+::PROTOBUF_NAMESPACE_ID::Metadata NetifeScriptCommandRequest_ParamsEntry_DoNotUse::GetMetadata() const {
+  return ::_pbi::AssignDescriptors(
+      &descriptor_table_NetifeMessage_2eproto_getter, &descriptor_table_NetifeMessage_2eproto_once,
+      file_level_metadata_NetifeMessage_2eproto[12]);
+}
+
+// ===================================================================
+
+class NetifeScriptCommandRequest::_Internal {
+ public:
+};
+
+NetifeScriptCommandRequest::NetifeScriptCommandRequest(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                         bool is_message_owned)
+  : ::PROTOBUF_NAMESPACE_ID::Message(arena, is_message_owned) {
+  SharedCtor(arena, is_message_owned);
+  if (arena != nullptr && !is_message_owned) {
+    arena->OwnCustomDestructor(this, &NetifeScriptCommandRequest::ArenaDtor);
+  }
+  // @@protoc_insertion_point(arena_constructor:NetifeMessage.NetifeScriptCommandRequest)
+}
+NetifeScriptCommandRequest::NetifeScriptCommandRequest(const NetifeScriptCommandRequest& from)
+  : ::PROTOBUF_NAMESPACE_ID::Message() {
+  NetifeScriptCommandRequest* const _this = this; (void)_this;
+  new (&_impl_) Impl_{
+      /*decltype(_impl_.params_)*/{}
+    , decltype(_impl_.script_name_){}
+    , decltype(_impl_.export_function_){}
+    , /*decltype(_impl_._cached_size_)*/{}};
+
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+  _this->_impl_.params_.MergeFrom(from._impl_.params_);
+  _impl_.script_name_.InitDefault();
+  #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+    _impl_.script_name_.Set("", GetArenaForAllocation());
+  #endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  if (!from._internal_script_name().empty()) {
+    _this->_impl_.script_name_.Set(from._internal_script_name(), 
+      _this->GetArenaForAllocation());
+  }
+  _impl_.export_function_.InitDefault();
+  #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+    _impl_.export_function_.Set("", GetArenaForAllocation());
+  #endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  if (!from._internal_export_function().empty()) {
+    _this->_impl_.export_function_.Set(from._internal_export_function(), 
+      _this->GetArenaForAllocation());
+  }
+  // @@protoc_insertion_point(copy_constructor:NetifeMessage.NetifeScriptCommandRequest)
+}
+
+inline void NetifeScriptCommandRequest::SharedCtor(
+    ::_pb::Arena* arena, bool is_message_owned) {
+  (void)arena;
+  (void)is_message_owned;
+  new (&_impl_) Impl_{
+      /*decltype(_impl_.params_)*/{::_pbi::ArenaInitialized(), arena}
+    , decltype(_impl_.script_name_){}
+    , decltype(_impl_.export_function_){}
+    , /*decltype(_impl_._cached_size_)*/{}
+  };
+  _impl_.script_name_.InitDefault();
+  #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+    _impl_.script_name_.Set("", GetArenaForAllocation());
+  #endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  _impl_.export_function_.InitDefault();
+  #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+    _impl_.export_function_.Set("", GetArenaForAllocation());
+  #endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+}
+
+NetifeScriptCommandRequest::~NetifeScriptCommandRequest() {
+  // @@protoc_insertion_point(destructor:NetifeMessage.NetifeScriptCommandRequest)
+  if (auto *arena = _internal_metadata_.DeleteReturnArena<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>()) {
+  (void)arena;
+    ArenaDtor(this);
+    return;
+  }
+  SharedDtor();
+}
+
+inline void NetifeScriptCommandRequest::SharedDtor() {
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
+  _impl_.params_.Destruct();
+  _impl_.params_.~MapField();
+  _impl_.script_name_.Destroy();
+  _impl_.export_function_.Destroy();
+}
+
+void NetifeScriptCommandRequest::ArenaDtor(void* object) {
+  NetifeScriptCommandRequest* _this = reinterpret_cast< NetifeScriptCommandRequest* >(object);
+  _this->_impl_.params_.Destruct();
+}
+void NetifeScriptCommandRequest::SetCachedSize(int size) const {
+  _impl_._cached_size_.Set(size);
+}
+
+void NetifeScriptCommandRequest::Clear() {
+// @@protoc_insertion_point(message_clear_start:NetifeMessage.NetifeScriptCommandRequest)
+  uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  _impl_.params_.Clear();
+  _impl_.script_name_.ClearToEmpty();
+  _impl_.export_function_.ClearToEmpty();
+  _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+}
+
+const char* NetifeScriptCommandRequest::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) {
+#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+  while (!ctx->Done(&ptr)) {
+    uint32_t tag;
+    ptr = ::_pbi::ReadTag(ptr, &tag);
+    switch (tag >> 3) {
+      // string script_name = 1;
+      case 1:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 10)) {
+          auto str = _internal_mutable_script_name();
+          ptr = ::_pbi::InlineGreedyStringParser(str, ptr, ctx);
+          CHK_(ptr);
+          CHK_(::_pbi::VerifyUTF8(str, "NetifeMessage.NetifeScriptCommandRequest.script_name"));
+        } else
+          goto handle_unusual;
+        continue;
+      // string export_function = 2;
+      case 2:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 18)) {
+          auto str = _internal_mutable_export_function();
+          ptr = ::_pbi::InlineGreedyStringParser(str, ptr, ctx);
+          CHK_(ptr);
+          CHK_(::_pbi::VerifyUTF8(str, "NetifeMessage.NetifeScriptCommandRequest.export_function"));
+        } else
+          goto handle_unusual;
+        continue;
+      // map<string, string> params = 3;
+      case 3:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 26)) {
+          ptr -= 1;
+          do {
+            ptr += 1;
+            ptr = ctx->ParseMessage(&_impl_.params_, ptr);
+            CHK_(ptr);
+            if (!ctx->DataAvailable(ptr)) break;
+          } while (::PROTOBUF_NAMESPACE_ID::internal::ExpectTag<26>(ptr));
+        } else
+          goto handle_unusual;
+        continue;
+      default:
+        goto handle_unusual;
+    }  // switch
+  handle_unusual:
+    if ((tag == 0) || ((tag & 7) == 4)) {
+      CHK_(ptr);
+      ctx->SetLastTag(tag);
+      goto message_done;
+    }
+    ptr = UnknownFieldParse(
+        tag,
+        _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(),
+        ptr, ctx);
+    CHK_(ptr != nullptr);
+  }  // while
+message_done:
+  return ptr;
+failure:
+  ptr = nullptr;
+  goto message_done;
+#undef CHK_
+}
+
+uint8_t* NetifeScriptCommandRequest::_InternalSerialize(
+    uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+  // @@protoc_insertion_point(serialize_to_array_start:NetifeMessage.NetifeScriptCommandRequest)
+  uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  // string script_name = 1;
+  if (!this->_internal_script_name().empty()) {
+    ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::VerifyUtf8String(
+      this->_internal_script_name().data(), static_cast<int>(this->_internal_script_name().length()),
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::SERIALIZE,
+      "NetifeMessage.NetifeScriptCommandRequest.script_name");
+    target = stream->WriteStringMaybeAliased(
+        1, this->_internal_script_name(), target);
+  }
+
+  // string export_function = 2;
+  if (!this->_internal_export_function().empty()) {
+    ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::VerifyUtf8String(
+      this->_internal_export_function().data(), static_cast<int>(this->_internal_export_function().length()),
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::SERIALIZE,
+      "NetifeMessage.NetifeScriptCommandRequest.export_function");
+    target = stream->WriteStringMaybeAliased(
+        2, this->_internal_export_function(), target);
+  }
+
+  // map<string, string> params = 3;
+  if (!this->_internal_params().empty()) {
+    using MapType = ::_pb::Map<std::string, std::string>;
+    using WireHelper = NetifeScriptCommandRequest_ParamsEntry_DoNotUse::Funcs;
+    const auto& map_field = this->_internal_params();
+    auto check_utf8 = [](const MapType::value_type& entry) {
+      (void)entry;
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::VerifyUtf8String(
+        entry.first.data(), static_cast<int>(entry.first.length()),
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::SERIALIZE,
+        "NetifeMessage.NetifeScriptCommandRequest.ParamsEntry.key");
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::VerifyUtf8String(
+        entry.second.data(), static_cast<int>(entry.second.length()),
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::SERIALIZE,
+        "NetifeMessage.NetifeScriptCommandRequest.ParamsEntry.value");
+    };
+
+    if (stream->IsSerializationDeterministic() && map_field.size() > 1) {
+      for (const auto& entry : ::_pbi::MapSorterPtr<MapType>(map_field)) {
+        target = WireHelper::InternalSerialize(3, entry.first, entry.second, target, stream);
+        check_utf8(entry);
+      }
+    } else {
+      for (const auto& entry : map_field) {
+        target = WireHelper::InternalSerialize(3, entry.first, entry.second, target, stream);
+        check_utf8(entry);
+      }
+    }
+  }
+
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    target = ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+        _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:NetifeMessage.NetifeScriptCommandRequest)
+  return target;
+}
+
+size_t NetifeScriptCommandRequest::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:NetifeMessage.NetifeScriptCommandRequest)
+  size_t total_size = 0;
+
+  uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  // map<string, string> params = 3;
+  total_size += 1 *
+      ::PROTOBUF_NAMESPACE_ID::internal::FromIntSize(this->_internal_params_size());
+  for (::PROTOBUF_NAMESPACE_ID::Map< std::string, std::string >::const_iterator
+      it = this->_internal_params().begin();
+      it != this->_internal_params().end(); ++it) {
+    total_size += NetifeScriptCommandRequest_ParamsEntry_DoNotUse::Funcs::ByteSizeLong(it->first, it->second);
+  }
+
+  // string script_name = 1;
+  if (!this->_internal_script_name().empty()) {
+    total_size += 1 +
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+        this->_internal_script_name());
+  }
+
+  // string export_function = 2;
+  if (!this->_internal_export_function().empty()) {
+    total_size += 1 +
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+        this->_internal_export_function());
+  }
+
+  return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
+}
+
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData NetifeScriptCommandRequest::_class_data_ = {
+    ::PROTOBUF_NAMESPACE_ID::Message::CopyWithSourceCheck,
+    NetifeScriptCommandRequest::MergeImpl
+};
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*NetifeScriptCommandRequest::GetClassData() const { return &_class_data_; }
+
+
+void NetifeScriptCommandRequest::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROTOBUF_NAMESPACE_ID::Message& from_msg) {
+  auto* const _this = static_cast<NetifeScriptCommandRequest*>(&to_msg);
+  auto& from = static_cast<const NetifeScriptCommandRequest&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:NetifeMessage.NetifeScriptCommandRequest)
+  GOOGLE_DCHECK_NE(&from, _this);
+  uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  _this->_impl_.params_.MergeFrom(from._impl_.params_);
+  if (!from._internal_script_name().empty()) {
+    _this->_internal_set_script_name(from._internal_script_name());
+  }
+  if (!from._internal_export_function().empty()) {
+    _this->_internal_set_export_function(from._internal_export_function());
+  }
+  _this->_internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void NetifeScriptCommandRequest::CopyFrom(const NetifeScriptCommandRequest& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:NetifeMessage.NetifeScriptCommandRequest)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+bool NetifeScriptCommandRequest::IsInitialized() const {
+  return true;
+}
+
+void NetifeScriptCommandRequest::InternalSwap(NetifeScriptCommandRequest* other) {
+  using std::swap;
+  auto* lhs_arena = GetArenaForAllocation();
+  auto* rhs_arena = other->GetArenaForAllocation();
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  _impl_.params_.InternalSwap(&other->_impl_.params_);
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      &_impl_.script_name_, lhs_arena,
+      &other->_impl_.script_name_, rhs_arena
+  );
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      &_impl_.export_function_, lhs_arena,
+      &other->_impl_.export_function_, rhs_arena
+  );
+}
+
+::PROTOBUF_NAMESPACE_ID::Metadata NetifeScriptCommandRequest::GetMetadata() const {
+  return ::_pbi::AssignDescriptors(
+      &descriptor_table_NetifeMessage_2eproto_getter, &descriptor_table_NetifeMessage_2eproto_once,
+      file_level_metadata_NetifeMessage_2eproto[13]);
+}
+
+// ===================================================================
+
+class NetifeScriptCommandResponse::_Internal {
+ public:
+};
+
+NetifeScriptCommandResponse::NetifeScriptCommandResponse(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                         bool is_message_owned)
+  : ::PROTOBUF_NAMESPACE_ID::Message(arena, is_message_owned) {
+  SharedCtor(arena, is_message_owned);
+  // @@protoc_insertion_point(arena_constructor:NetifeMessage.NetifeScriptCommandResponse)
+}
+NetifeScriptCommandResponse::NetifeScriptCommandResponse(const NetifeScriptCommandResponse& from)
+  : ::PROTOBUF_NAMESPACE_ID::Message() {
+  NetifeScriptCommandResponse* const _this = this; (void)_this;
+  new (&_impl_) Impl_{
+      decltype(_impl_.result_){}
+    , /*decltype(_impl_._cached_size_)*/{}};
+
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+  _impl_.result_.InitDefault();
+  #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+    _impl_.result_.Set("", GetArenaForAllocation());
+  #endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  if (!from._internal_result().empty()) {
+    _this->_impl_.result_.Set(from._internal_result(), 
+      _this->GetArenaForAllocation());
+  }
+  // @@protoc_insertion_point(copy_constructor:NetifeMessage.NetifeScriptCommandResponse)
+}
+
+inline void NetifeScriptCommandResponse::SharedCtor(
+    ::_pb::Arena* arena, bool is_message_owned) {
+  (void)arena;
+  (void)is_message_owned;
+  new (&_impl_) Impl_{
+      decltype(_impl_.result_){}
+    , /*decltype(_impl_._cached_size_)*/{}
+  };
+  _impl_.result_.InitDefault();
+  #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+    _impl_.result_.Set("", GetArenaForAllocation());
+  #endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+}
+
+NetifeScriptCommandResponse::~NetifeScriptCommandResponse() {
+  // @@protoc_insertion_point(destructor:NetifeMessage.NetifeScriptCommandResponse)
+  if (auto *arena = _internal_metadata_.DeleteReturnArena<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>()) {
+  (void)arena;
+    return;
+  }
+  SharedDtor();
+}
+
+inline void NetifeScriptCommandResponse::SharedDtor() {
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
+  _impl_.result_.Destroy();
+}
+
+void NetifeScriptCommandResponse::SetCachedSize(int size) const {
+  _impl_._cached_size_.Set(size);
+}
+
+void NetifeScriptCommandResponse::Clear() {
+// @@protoc_insertion_point(message_clear_start:NetifeMessage.NetifeScriptCommandResponse)
+  uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  _impl_.result_.ClearToEmpty();
+  _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+}
+
+const char* NetifeScriptCommandResponse::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) {
+#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+  while (!ctx->Done(&ptr)) {
+    uint32_t tag;
+    ptr = ::_pbi::ReadTag(ptr, &tag);
+    switch (tag >> 3) {
+      // string result = 1;
+      case 1:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 10)) {
+          auto str = _internal_mutable_result();
+          ptr = ::_pbi::InlineGreedyStringParser(str, ptr, ctx);
+          CHK_(ptr);
+          CHK_(::_pbi::VerifyUTF8(str, "NetifeMessage.NetifeScriptCommandResponse.result"));
+        } else
+          goto handle_unusual;
+        continue;
+      default:
+        goto handle_unusual;
+    }  // switch
+  handle_unusual:
+    if ((tag == 0) || ((tag & 7) == 4)) {
+      CHK_(ptr);
+      ctx->SetLastTag(tag);
+      goto message_done;
+    }
+    ptr = UnknownFieldParse(
+        tag,
+        _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(),
+        ptr, ctx);
+    CHK_(ptr != nullptr);
+  }  // while
+message_done:
+  return ptr;
+failure:
+  ptr = nullptr;
+  goto message_done;
+#undef CHK_
+}
+
+uint8_t* NetifeScriptCommandResponse::_InternalSerialize(
+    uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+  // @@protoc_insertion_point(serialize_to_array_start:NetifeMessage.NetifeScriptCommandResponse)
+  uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  // string result = 1;
+  if (!this->_internal_result().empty()) {
+    ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::VerifyUtf8String(
+      this->_internal_result().data(), static_cast<int>(this->_internal_result().length()),
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::SERIALIZE,
+      "NetifeMessage.NetifeScriptCommandResponse.result");
+    target = stream->WriteStringMaybeAliased(
+        1, this->_internal_result(), target);
+  }
+
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    target = ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+        _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:NetifeMessage.NetifeScriptCommandResponse)
+  return target;
+}
+
+size_t NetifeScriptCommandResponse::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:NetifeMessage.NetifeScriptCommandResponse)
+  size_t total_size = 0;
+
+  uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  // string result = 1;
+  if (!this->_internal_result().empty()) {
+    total_size += 1 +
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+        this->_internal_result());
+  }
+
+  return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
+}
+
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData NetifeScriptCommandResponse::_class_data_ = {
+    ::PROTOBUF_NAMESPACE_ID::Message::CopyWithSourceCheck,
+    NetifeScriptCommandResponse::MergeImpl
+};
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*NetifeScriptCommandResponse::GetClassData() const { return &_class_data_; }
+
+
+void NetifeScriptCommandResponse::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROTOBUF_NAMESPACE_ID::Message& from_msg) {
+  auto* const _this = static_cast<NetifeScriptCommandResponse*>(&to_msg);
+  auto& from = static_cast<const NetifeScriptCommandResponse&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:NetifeMessage.NetifeScriptCommandResponse)
+  GOOGLE_DCHECK_NE(&from, _this);
+  uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  if (!from._internal_result().empty()) {
+    _this->_internal_set_result(from._internal_result());
+  }
+  _this->_internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void NetifeScriptCommandResponse::CopyFrom(const NetifeScriptCommandResponse& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:NetifeMessage.NetifeScriptCommandResponse)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+bool NetifeScriptCommandResponse::IsInitialized() const {
+  return true;
+}
+
+void NetifeScriptCommandResponse::InternalSwap(NetifeScriptCommandResponse* other) {
+  using std::swap;
+  auto* lhs_arena = GetArenaForAllocation();
+  auto* rhs_arena = other->GetArenaForAllocation();
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      &_impl_.result_, lhs_arena,
+      &other->_impl_.result_, rhs_arena
+  );
+}
+
+::PROTOBUF_NAMESPACE_ID::Metadata NetifeScriptCommandResponse::GetMetadata() const {
+  return ::_pbi::AssignDescriptors(
+      &descriptor_table_NetifeMessage_2eproto_getter, &descriptor_table_NetifeMessage_2eproto_once,
+      file_level_metadata_NetifeMessage_2eproto[14]);
+}
+
 // @@protoc_insertion_point(namespace_scope)
 }  // namespace NetifeMessage
 PROTOBUF_NAMESPACE_OPEN
@@ -4980,6 +5598,18 @@ Arena::CreateMaybeMessage< ::NetifeMessage::NetifeScriptDebuggerRequest >(Arena*
 template<> PROTOBUF_NOINLINE ::NetifeMessage::NetifeScriptDebuggerResponse*
 Arena::CreateMaybeMessage< ::NetifeMessage::NetifeScriptDebuggerResponse >(Arena* arena) {
   return Arena::CreateMessageInternal< ::NetifeMessage::NetifeScriptDebuggerResponse >(arena);
+}
+template<> PROTOBUF_NOINLINE ::NetifeMessage::NetifeScriptCommandRequest_ParamsEntry_DoNotUse*
+Arena::CreateMaybeMessage< ::NetifeMessage::NetifeScriptCommandRequest_ParamsEntry_DoNotUse >(Arena* arena) {
+  return Arena::CreateMessageInternal< ::NetifeMessage::NetifeScriptCommandRequest_ParamsEntry_DoNotUse >(arena);
+}
+template<> PROTOBUF_NOINLINE ::NetifeMessage::NetifeScriptCommandRequest*
+Arena::CreateMaybeMessage< ::NetifeMessage::NetifeScriptCommandRequest >(Arena* arena) {
+  return Arena::CreateMessageInternal< ::NetifeMessage::NetifeScriptCommandRequest >(arena);
+}
+template<> PROTOBUF_NOINLINE ::NetifeMessage::NetifeScriptCommandResponse*
+Arena::CreateMaybeMessage< ::NetifeMessage::NetifeScriptCommandResponse >(Arena* arena) {
+  return Arena::CreateMessageInternal< ::NetifeMessage::NetifeScriptCommandResponse >(arena);
 }
 PROTOBUF_NAMESPACE_CLOSE
 

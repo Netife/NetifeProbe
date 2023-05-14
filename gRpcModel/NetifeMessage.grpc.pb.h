@@ -43,6 +43,7 @@ class NetifeService final {
     std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::NetifeMessage::NetifeProbeResponse>> PrepareAsyncProcessProbe(::grpc::ClientContext* context, const ::NetifeMessage::NetifeProbeRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::NetifeMessage::NetifeProbeResponse>>(PrepareAsyncProcessProbeRaw(context, request, cq));
     }
+    // [已发布]
     virtual ::grpc::Status Register(::grpc::ClientContext* context, const ::NetifeMessage::NetifeRegisterRequest& request, ::NetifeMessage::NetifeRegisterResponse* response) = 0;
     std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::NetifeMessage::NetifeRegisterResponse>> AsyncRegister(::grpc::ClientContext* context, const ::NetifeMessage::NetifeRegisterRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::NetifeMessage::NetifeRegisterResponse>>(AsyncRegisterRaw(context, request, cq));
@@ -50,6 +51,7 @@ class NetifeService final {
     std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::NetifeMessage::NetifeRegisterResponse>> PrepareAsyncRegister(::grpc::ClientContext* context, const ::NetifeMessage::NetifeRegisterRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::NetifeMessage::NetifeRegisterResponse>>(PrepareAsyncRegisterRaw(context, request, cq));
     }
+    // [弃用] 只允许同一个对象链接 Dispatcher，不然调试不知道是不是真实数据
     virtual ::grpc::Status Composer(::grpc::ClientContext* context, const ::NetifeMessage::NetifeComposerRequest& request, ::NetifeMessage::NetifeComposerResponse* response) = 0;
     std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::NetifeMessage::NetifeComposerResponse>> AsyncComposer(::grpc::ClientContext* context, const ::NetifeMessage::NetifeComposerRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::NetifeMessage::NetifeComposerResponse>>(AsyncComposerRaw(context, request, cq));
@@ -57,6 +59,7 @@ class NetifeService final {
     std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::NetifeMessage::NetifeComposerResponse>> PrepareAsyncComposer(::grpc::ClientContext* context, const ::NetifeMessage::NetifeComposerRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::NetifeMessage::NetifeComposerResponse>>(PrepareAsyncComposerRaw(context, request, cq));
     }
+    // [等待 Probe 中]
     virtual ::grpc::Status Command(::grpc::ClientContext* context, const ::NetifeMessage::NetifePluginCommandRequest& request, ::NetifeMessage::NetifePluginCommandResponse* response) = 0;
     std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::NetifeMessage::NetifePluginCommandResponse>> AsyncCommand(::grpc::ClientContext* context, const ::NetifeMessage::NetifePluginCommandRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::NetifeMessage::NetifePluginCommandResponse>>(AsyncCommandRaw(context, request, cq));
@@ -64,6 +67,7 @@ class NetifeService final {
     std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::NetifeMessage::NetifePluginCommandResponse>> PrepareAsyncCommand(::grpc::ClientContext* context, const ::NetifeMessage::NetifePluginCommandRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::NetifeMessage::NetifePluginCommandResponse>>(PrepareAsyncCommandRaw(context, request, cq));
     }
+    // [已发布]
     virtual ::grpc::Status ScriptRegister(::grpc::ClientContext* context, const ::NetifeMessage::NetifeScriptRegisterRequest& request, ::NetifeMessage::NetifeScriptRegisterResponse* response) = 0;
     std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::NetifeMessage::NetifeScriptRegisterResponse>> AsyncScriptRegister(::grpc::ClientContext* context, const ::NetifeMessage::NetifeScriptRegisterRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::NetifeMessage::NetifeScriptRegisterResponse>>(AsyncScriptRegisterRaw(context, request, cq));
@@ -71,6 +75,7 @@ class NetifeService final {
     std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::NetifeMessage::NetifeScriptRegisterResponse>> PrepareAsyncScriptRegister(::grpc::ClientContext* context, const ::NetifeMessage::NetifeScriptRegisterRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::NetifeMessage::NetifeScriptRegisterResponse>>(PrepareAsyncScriptRegisterRaw(context, request, cq));
     }
+    // [弃用] 通过框架直接加载
     virtual ::grpc::Status ScriptDebug(::grpc::ClientContext* context, const ::NetifeMessage::NetifeScriptDebuggerRequest& request, ::NetifeMessage::NetifeScriptDebuggerResponse* response) = 0;
     std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::NetifeMessage::NetifeScriptDebuggerResponse>> AsyncScriptDebug(::grpc::ClientContext* context, const ::NetifeMessage::NetifeScriptDebuggerRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::NetifeMessage::NetifeScriptDebuggerResponse>>(AsyncScriptDebugRaw(context, request, cq));
@@ -78,21 +83,28 @@ class NetifeService final {
     std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::NetifeMessage::NetifeScriptDebuggerResponse>> PrepareAsyncScriptDebug(::grpc::ClientContext* context, const ::NetifeMessage::NetifeScriptDebuggerRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::NetifeMessage::NetifeScriptDebuggerResponse>>(PrepareAsyncScriptDebugRaw(context, request, cq));
     }
+    // [开发中]
     class async_interface {
      public:
       virtual ~async_interface() {}
       virtual void ProcessProbe(::grpc::ClientContext* context, const ::NetifeMessage::NetifeProbeRequest* request, ::NetifeMessage::NetifeProbeResponse* response, std::function<void(::grpc::Status)>) = 0;
       virtual void ProcessProbe(::grpc::ClientContext* context, const ::NetifeMessage::NetifeProbeRequest* request, ::NetifeMessage::NetifeProbeResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      // [已发布]
       virtual void Register(::grpc::ClientContext* context, const ::NetifeMessage::NetifeRegisterRequest* request, ::NetifeMessage::NetifeRegisterResponse* response, std::function<void(::grpc::Status)>) = 0;
       virtual void Register(::grpc::ClientContext* context, const ::NetifeMessage::NetifeRegisterRequest* request, ::NetifeMessage::NetifeRegisterResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      // [弃用] 只允许同一个对象链接 Dispatcher，不然调试不知道是不是真实数据
       virtual void Composer(::grpc::ClientContext* context, const ::NetifeMessage::NetifeComposerRequest* request, ::NetifeMessage::NetifeComposerResponse* response, std::function<void(::grpc::Status)>) = 0;
       virtual void Composer(::grpc::ClientContext* context, const ::NetifeMessage::NetifeComposerRequest* request, ::NetifeMessage::NetifeComposerResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      // [等待 Probe 中]
       virtual void Command(::grpc::ClientContext* context, const ::NetifeMessage::NetifePluginCommandRequest* request, ::NetifeMessage::NetifePluginCommandResponse* response, std::function<void(::grpc::Status)>) = 0;
       virtual void Command(::grpc::ClientContext* context, const ::NetifeMessage::NetifePluginCommandRequest* request, ::NetifeMessage::NetifePluginCommandResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      // [已发布]
       virtual void ScriptRegister(::grpc::ClientContext* context, const ::NetifeMessage::NetifeScriptRegisterRequest* request, ::NetifeMessage::NetifeScriptRegisterResponse* response, std::function<void(::grpc::Status)>) = 0;
       virtual void ScriptRegister(::grpc::ClientContext* context, const ::NetifeMessage::NetifeScriptRegisterRequest* request, ::NetifeMessage::NetifeScriptRegisterResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      // [弃用] 通过框架直接加载
       virtual void ScriptDebug(::grpc::ClientContext* context, const ::NetifeMessage::NetifeScriptDebuggerRequest* request, ::NetifeMessage::NetifeScriptDebuggerResponse* response, std::function<void(::grpc::Status)>) = 0;
       virtual void ScriptDebug(::grpc::ClientContext* context, const ::NetifeMessage::NetifeScriptDebuggerRequest* request, ::NetifeMessage::NetifeScriptDebuggerResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      // [开发中]
     };
     typedef class async_interface experimental_async_interface;
     virtual class async_interface* async() { return nullptr; }
@@ -208,11 +220,17 @@ class NetifeService final {
     Service();
     virtual ~Service();
     virtual ::grpc::Status ProcessProbe(::grpc::ServerContext* context, const ::NetifeMessage::NetifeProbeRequest* request, ::NetifeMessage::NetifeProbeResponse* response);
+    // [已发布]
     virtual ::grpc::Status Register(::grpc::ServerContext* context, const ::NetifeMessage::NetifeRegisterRequest* request, ::NetifeMessage::NetifeRegisterResponse* response);
+    // [弃用] 只允许同一个对象链接 Dispatcher，不然调试不知道是不是真实数据
     virtual ::grpc::Status Composer(::grpc::ServerContext* context, const ::NetifeMessage::NetifeComposerRequest* request, ::NetifeMessage::NetifeComposerResponse* response);
+    // [等待 Probe 中]
     virtual ::grpc::Status Command(::grpc::ServerContext* context, const ::NetifeMessage::NetifePluginCommandRequest* request, ::NetifeMessage::NetifePluginCommandResponse* response);
+    // [已发布]
     virtual ::grpc::Status ScriptRegister(::grpc::ServerContext* context, const ::NetifeMessage::NetifeScriptRegisterRequest* request, ::NetifeMessage::NetifeScriptRegisterResponse* response);
+    // [弃用] 通过框架直接加载
     virtual ::grpc::Status ScriptDebug(::grpc::ServerContext* context, const ::NetifeMessage::NetifeScriptDebuggerRequest* request, ::NetifeMessage::NetifeScriptDebuggerResponse* response);
+    // [开发中]
   };
   template <class BaseClass>
   class WithAsyncMethod_ProcessProbe : public BaseClass {
@@ -1036,11 +1054,24 @@ class NetifePost final {
     std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::NetifeMessage::NetifeProbeResponse>> PrepareAsyncUploadRequest(::grpc::ClientContext* context, const ::NetifeMessage::NetifeProbeRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::NetifeMessage::NetifeProbeResponse>>(PrepareAsyncUploadRequestRaw(context, request, cq));
     }
+    // [已发布]
+    virtual ::grpc::Status UseScriptCommand(::grpc::ClientContext* context, const ::NetifeMessage::NetifeScriptCommandRequest& request, ::NetifeMessage::NetifeScriptCommandResponse* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::NetifeMessage::NetifeScriptCommandResponse>> AsyncUseScriptCommand(::grpc::ClientContext* context, const ::NetifeMessage::NetifeScriptCommandRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::NetifeMessage::NetifeScriptCommandResponse>>(AsyncUseScriptCommandRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::NetifeMessage::NetifeScriptCommandResponse>> PrepareAsyncUseScriptCommand(::grpc::ClientContext* context, const ::NetifeMessage::NetifeScriptCommandRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::NetifeMessage::NetifeScriptCommandResponse>>(PrepareAsyncUseScriptCommandRaw(context, request, cq));
+    }
+    // [已发布]
     class async_interface {
      public:
       virtual ~async_interface() {}
       virtual void UploadRequest(::grpc::ClientContext* context, const ::NetifeMessage::NetifeProbeRequest* request, ::NetifeMessage::NetifeProbeResponse* response, std::function<void(::grpc::Status)>) = 0;
       virtual void UploadRequest(::grpc::ClientContext* context, const ::NetifeMessage::NetifeProbeRequest* request, ::NetifeMessage::NetifeProbeResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      // [已发布]
+      virtual void UseScriptCommand(::grpc::ClientContext* context, const ::NetifeMessage::NetifeScriptCommandRequest* request, ::NetifeMessage::NetifeScriptCommandResponse* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void UseScriptCommand(::grpc::ClientContext* context, const ::NetifeMessage::NetifeScriptCommandRequest* request, ::NetifeMessage::NetifeScriptCommandResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      // [已发布]
     };
     typedef class async_interface experimental_async_interface;
     virtual class async_interface* async() { return nullptr; }
@@ -1048,6 +1079,8 @@ class NetifePost final {
    private:
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::NetifeMessage::NetifeProbeResponse>* AsyncUploadRequestRaw(::grpc::ClientContext* context, const ::NetifeMessage::NetifeProbeRequest& request, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::NetifeMessage::NetifeProbeResponse>* PrepareAsyncUploadRequestRaw(::grpc::ClientContext* context, const ::NetifeMessage::NetifeProbeRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::NetifeMessage::NetifeScriptCommandResponse>* AsyncUseScriptCommandRaw(::grpc::ClientContext* context, const ::NetifeMessage::NetifeScriptCommandRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::NetifeMessage::NetifeScriptCommandResponse>* PrepareAsyncUseScriptCommandRaw(::grpc::ClientContext* context, const ::NetifeMessage::NetifeScriptCommandRequest& request, ::grpc::CompletionQueue* cq) = 0;
   };
   class Stub final : public StubInterface {
    public:
@@ -1059,11 +1092,20 @@ class NetifePost final {
     std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::NetifeMessage::NetifeProbeResponse>> PrepareAsyncUploadRequest(::grpc::ClientContext* context, const ::NetifeMessage::NetifeProbeRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::NetifeMessage::NetifeProbeResponse>>(PrepareAsyncUploadRequestRaw(context, request, cq));
     }
+    ::grpc::Status UseScriptCommand(::grpc::ClientContext* context, const ::NetifeMessage::NetifeScriptCommandRequest& request, ::NetifeMessage::NetifeScriptCommandResponse* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::NetifeMessage::NetifeScriptCommandResponse>> AsyncUseScriptCommand(::grpc::ClientContext* context, const ::NetifeMessage::NetifeScriptCommandRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::NetifeMessage::NetifeScriptCommandResponse>>(AsyncUseScriptCommandRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::NetifeMessage::NetifeScriptCommandResponse>> PrepareAsyncUseScriptCommand(::grpc::ClientContext* context, const ::NetifeMessage::NetifeScriptCommandRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::NetifeMessage::NetifeScriptCommandResponse>>(PrepareAsyncUseScriptCommandRaw(context, request, cq));
+    }
     class async final :
       public StubInterface::async_interface {
      public:
       void UploadRequest(::grpc::ClientContext* context, const ::NetifeMessage::NetifeProbeRequest* request, ::NetifeMessage::NetifeProbeResponse* response, std::function<void(::grpc::Status)>) override;
       void UploadRequest(::grpc::ClientContext* context, const ::NetifeMessage::NetifeProbeRequest* request, ::NetifeMessage::NetifeProbeResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void UseScriptCommand(::grpc::ClientContext* context, const ::NetifeMessage::NetifeScriptCommandRequest* request, ::NetifeMessage::NetifeScriptCommandResponse* response, std::function<void(::grpc::Status)>) override;
+      void UseScriptCommand(::grpc::ClientContext* context, const ::NetifeMessage::NetifeScriptCommandRequest* request, ::NetifeMessage::NetifeScriptCommandResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
      private:
       friend class Stub;
       explicit async(Stub* stub): stub_(stub) { }
@@ -1077,7 +1119,10 @@ class NetifePost final {
     class async async_stub_{this};
     ::grpc::ClientAsyncResponseReader< ::NetifeMessage::NetifeProbeResponse>* AsyncUploadRequestRaw(::grpc::ClientContext* context, const ::NetifeMessage::NetifeProbeRequest& request, ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientAsyncResponseReader< ::NetifeMessage::NetifeProbeResponse>* PrepareAsyncUploadRequestRaw(::grpc::ClientContext* context, const ::NetifeMessage::NetifeProbeRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::NetifeMessage::NetifeScriptCommandResponse>* AsyncUseScriptCommandRaw(::grpc::ClientContext* context, const ::NetifeMessage::NetifeScriptCommandRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::NetifeMessage::NetifeScriptCommandResponse>* PrepareAsyncUseScriptCommandRaw(::grpc::ClientContext* context, const ::NetifeMessage::NetifeScriptCommandRequest& request, ::grpc::CompletionQueue* cq) override;
     const ::grpc::internal::RpcMethod rpcmethod_UploadRequest_;
+    const ::grpc::internal::RpcMethod rpcmethod_UseScriptCommand_;
   };
   static std::unique_ptr<Stub> NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options = ::grpc::StubOptions());
 
@@ -1086,6 +1131,9 @@ class NetifePost final {
     Service();
     virtual ~Service();
     virtual ::grpc::Status UploadRequest(::grpc::ServerContext* context, const ::NetifeMessage::NetifeProbeRequest* request, ::NetifeMessage::NetifeProbeResponse* response);
+    // [已发布]
+    virtual ::grpc::Status UseScriptCommand(::grpc::ServerContext* context, const ::NetifeMessage::NetifeScriptCommandRequest* request, ::NetifeMessage::NetifeScriptCommandResponse* response);
+    // [已发布]
   };
   template <class BaseClass>
   class WithAsyncMethod_UploadRequest : public BaseClass {
@@ -1107,7 +1155,27 @@ class NetifePost final {
       ::grpc::Service::RequestAsyncUnary(0, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
-  typedef WithAsyncMethod_UploadRequest<Service > AsyncService;
+  template <class BaseClass>
+  class WithAsyncMethod_UseScriptCommand : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithAsyncMethod_UseScriptCommand() {
+      ::grpc::Service::MarkMethodAsync(1);
+    }
+    ~WithAsyncMethod_UseScriptCommand() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status UseScriptCommand(::grpc::ServerContext* /*context*/, const ::NetifeMessage::NetifeScriptCommandRequest* /*request*/, ::NetifeMessage::NetifeScriptCommandResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestUseScriptCommand(::grpc::ServerContext* context, ::NetifeMessage::NetifeScriptCommandRequest* request, ::grpc::ServerAsyncResponseWriter< ::NetifeMessage::NetifeScriptCommandResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(1, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  typedef WithAsyncMethod_UploadRequest<WithAsyncMethod_UseScriptCommand<Service > > AsyncService;
   template <class BaseClass>
   class WithCallbackMethod_UploadRequest : public BaseClass {
    private:
@@ -1135,7 +1203,34 @@ class NetifePost final {
     virtual ::grpc::ServerUnaryReactor* UploadRequest(
       ::grpc::CallbackServerContext* /*context*/, const ::NetifeMessage::NetifeProbeRequest* /*request*/, ::NetifeMessage::NetifeProbeResponse* /*response*/)  { return nullptr; }
   };
-  typedef WithCallbackMethod_UploadRequest<Service > CallbackService;
+  template <class BaseClass>
+  class WithCallbackMethod_UseScriptCommand : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithCallbackMethod_UseScriptCommand() {
+      ::grpc::Service::MarkMethodCallback(1,
+          new ::grpc::internal::CallbackUnaryHandler< ::NetifeMessage::NetifeScriptCommandRequest, ::NetifeMessage::NetifeScriptCommandResponse>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::NetifeMessage::NetifeScriptCommandRequest* request, ::NetifeMessage::NetifeScriptCommandResponse* response) { return this->UseScriptCommand(context, request, response); }));}
+    void SetMessageAllocatorFor_UseScriptCommand(
+        ::grpc::MessageAllocator< ::NetifeMessage::NetifeScriptCommandRequest, ::NetifeMessage::NetifeScriptCommandResponse>* allocator) {
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(1);
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::NetifeMessage::NetifeScriptCommandRequest, ::NetifeMessage::NetifeScriptCommandResponse>*>(handler)
+              ->SetMessageAllocator(allocator);
+    }
+    ~WithCallbackMethod_UseScriptCommand() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status UseScriptCommand(::grpc::ServerContext* /*context*/, const ::NetifeMessage::NetifeScriptCommandRequest* /*request*/, ::NetifeMessage::NetifeScriptCommandResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* UseScriptCommand(
+      ::grpc::CallbackServerContext* /*context*/, const ::NetifeMessage::NetifeScriptCommandRequest* /*request*/, ::NetifeMessage::NetifeScriptCommandResponse* /*response*/)  { return nullptr; }
+  };
+  typedef WithCallbackMethod_UploadRequest<WithCallbackMethod_UseScriptCommand<Service > > CallbackService;
   typedef CallbackService ExperimentalCallbackService;
   template <class BaseClass>
   class WithGenericMethod_UploadRequest : public BaseClass {
@@ -1150,6 +1245,23 @@ class NetifePost final {
     }
     // disable synchronous version of this method
     ::grpc::Status UploadRequest(::grpc::ServerContext* /*context*/, const ::NetifeMessage::NetifeProbeRequest* /*request*/, ::NetifeMessage::NetifeProbeResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+  };
+  template <class BaseClass>
+  class WithGenericMethod_UseScriptCommand : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithGenericMethod_UseScriptCommand() {
+      ::grpc::Service::MarkMethodGeneric(1);
+    }
+    ~WithGenericMethod_UseScriptCommand() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status UseScriptCommand(::grpc::ServerContext* /*context*/, const ::NetifeMessage::NetifeScriptCommandRequest* /*request*/, ::NetifeMessage::NetifeScriptCommandResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -1175,6 +1287,26 @@ class NetifePost final {
     }
   };
   template <class BaseClass>
+  class WithRawMethod_UseScriptCommand : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_UseScriptCommand() {
+      ::grpc::Service::MarkMethodRaw(1);
+    }
+    ~WithRawMethod_UseScriptCommand() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status UseScriptCommand(::grpc::ServerContext* /*context*/, const ::NetifeMessage::NetifeScriptCommandRequest* /*request*/, ::NetifeMessage::NetifeScriptCommandResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestUseScriptCommand(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(1, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
   class WithRawCallbackMethod_UploadRequest : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
@@ -1194,6 +1326,28 @@ class NetifePost final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     virtual ::grpc::ServerUnaryReactor* UploadRequest(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithRawCallbackMethod_UseScriptCommand : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawCallbackMethod_UseScriptCommand() {
+      ::grpc::Service::MarkMethodRawCallback(1,
+          new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->UseScriptCommand(context, request, response); }));
+    }
+    ~WithRawCallbackMethod_UseScriptCommand() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status UseScriptCommand(::grpc::ServerContext* /*context*/, const ::NetifeMessage::NetifeScriptCommandRequest* /*request*/, ::NetifeMessage::NetifeScriptCommandResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* UseScriptCommand(
       ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
   };
   template <class BaseClass>
@@ -1223,9 +1377,36 @@ class NetifePost final {
     // replace default version of method with streamed unary
     virtual ::grpc::Status StreamedUploadRequest(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::NetifeMessage::NetifeProbeRequest,::NetifeMessage::NetifeProbeResponse>* server_unary_streamer) = 0;
   };
-  typedef WithStreamedUnaryMethod_UploadRequest<Service > StreamedUnaryService;
+  template <class BaseClass>
+  class WithStreamedUnaryMethod_UseScriptCommand : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithStreamedUnaryMethod_UseScriptCommand() {
+      ::grpc::Service::MarkMethodStreamed(1,
+        new ::grpc::internal::StreamedUnaryHandler<
+          ::NetifeMessage::NetifeScriptCommandRequest, ::NetifeMessage::NetifeScriptCommandResponse>(
+            [this](::grpc::ServerContext* context,
+                   ::grpc::ServerUnaryStreamer<
+                     ::NetifeMessage::NetifeScriptCommandRequest, ::NetifeMessage::NetifeScriptCommandResponse>* streamer) {
+                       return this->StreamedUseScriptCommand(context,
+                         streamer);
+                  }));
+    }
+    ~WithStreamedUnaryMethod_UseScriptCommand() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable regular version of this method
+    ::grpc::Status UseScriptCommand(::grpc::ServerContext* /*context*/, const ::NetifeMessage::NetifeScriptCommandRequest* /*request*/, ::NetifeMessage::NetifeScriptCommandResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    // replace default version of method with streamed unary
+    virtual ::grpc::Status StreamedUseScriptCommand(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::NetifeMessage::NetifeScriptCommandRequest,::NetifeMessage::NetifeScriptCommandResponse>* server_unary_streamer) = 0;
+  };
+  typedef WithStreamedUnaryMethod_UploadRequest<WithStreamedUnaryMethod_UseScriptCommand<Service > > StreamedUnaryService;
   typedef Service SplitStreamedService;
-  typedef WithStreamedUnaryMethod_UploadRequest<Service > StreamedService;
+  typedef WithStreamedUnaryMethod_UploadRequest<WithStreamedUnaryMethod_UseScriptCommand<Service > > StreamedService;
 };
 
 }  // namespace NetifeMessage

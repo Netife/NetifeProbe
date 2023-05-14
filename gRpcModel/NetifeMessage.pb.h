@@ -29,6 +29,9 @@
 #include <google/protobuf/message.h>
 #include <google/protobuf/repeated_field.h>  // IWYU pragma: export
 #include <google/protobuf/extension_set.h>  // IWYU pragma: export
+#include <google/protobuf/map.h>  // IWYU pragma: export
+#include <google/protobuf/map_entry.h>
+#include <google/protobuf/map_field_inl.h>
 #include <google/protobuf/generated_enum_reflection.h>
 #include <google/protobuf/unknown_field_set.h>
 // @@protoc_insertion_point(includes)
@@ -70,6 +73,15 @@ extern NetifeRegisterRequestDefaultTypeInternal _NetifeRegisterRequest_default_i
 class NetifeRegisterResponse;
 struct NetifeRegisterResponseDefaultTypeInternal;
 extern NetifeRegisterResponseDefaultTypeInternal _NetifeRegisterResponse_default_instance_;
+class NetifeScriptCommandRequest;
+struct NetifeScriptCommandRequestDefaultTypeInternal;
+extern NetifeScriptCommandRequestDefaultTypeInternal _NetifeScriptCommandRequest_default_instance_;
+class NetifeScriptCommandRequest_ParamsEntry_DoNotUse;
+struct NetifeScriptCommandRequest_ParamsEntry_DoNotUseDefaultTypeInternal;
+extern NetifeScriptCommandRequest_ParamsEntry_DoNotUseDefaultTypeInternal _NetifeScriptCommandRequest_ParamsEntry_DoNotUse_default_instance_;
+class NetifeScriptCommandResponse;
+struct NetifeScriptCommandResponseDefaultTypeInternal;
+extern NetifeScriptCommandResponseDefaultTypeInternal _NetifeScriptCommandResponse_default_instance_;
 class NetifeScriptDebuggerRequest;
 struct NetifeScriptDebuggerRequestDefaultTypeInternal;
 extern NetifeScriptDebuggerRequestDefaultTypeInternal _NetifeScriptDebuggerRequest_default_instance_;
@@ -92,6 +104,9 @@ template<> ::NetifeMessage::NetifeProbeRequest* Arena::CreateMaybeMessage<::Neti
 template<> ::NetifeMessage::NetifeProbeResponse* Arena::CreateMaybeMessage<::NetifeMessage::NetifeProbeResponse>(Arena*);
 template<> ::NetifeMessage::NetifeRegisterRequest* Arena::CreateMaybeMessage<::NetifeMessage::NetifeRegisterRequest>(Arena*);
 template<> ::NetifeMessage::NetifeRegisterResponse* Arena::CreateMaybeMessage<::NetifeMessage::NetifeRegisterResponse>(Arena*);
+template<> ::NetifeMessage::NetifeScriptCommandRequest* Arena::CreateMaybeMessage<::NetifeMessage::NetifeScriptCommandRequest>(Arena*);
+template<> ::NetifeMessage::NetifeScriptCommandRequest_ParamsEntry_DoNotUse* Arena::CreateMaybeMessage<::NetifeMessage::NetifeScriptCommandRequest_ParamsEntry_DoNotUse>(Arena*);
+template<> ::NetifeMessage::NetifeScriptCommandResponse* Arena::CreateMaybeMessage<::NetifeMessage::NetifeScriptCommandResponse>(Arena*);
 template<> ::NetifeMessage::NetifeScriptDebuggerRequest* Arena::CreateMaybeMessage<::NetifeMessage::NetifeScriptDebuggerRequest>(Arena*);
 template<> ::NetifeMessage::NetifeScriptDebuggerResponse* Arena::CreateMaybeMessage<::NetifeMessage::NetifeScriptDebuggerResponse>(Arena*);
 template<> ::NetifeMessage::NetifeScriptRegisterRequest* Arena::CreateMaybeMessage<::NetifeMessage::NetifeScriptRegisterRequest>(Arena*);
@@ -2831,6 +2846,382 @@ class NetifeScriptDebuggerResponse final :
   union { Impl_ _impl_; };
   friend struct ::TableStruct_NetifeMessage_2eproto;
 };
+// -------------------------------------------------------------------
+
+class NetifeScriptCommandRequest_ParamsEntry_DoNotUse : public ::PROTOBUF_NAMESPACE_ID::internal::MapEntry<NetifeScriptCommandRequest_ParamsEntry_DoNotUse, 
+    std::string, std::string,
+    ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::TYPE_STRING,
+    ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::TYPE_STRING> {
+public:
+  typedef ::PROTOBUF_NAMESPACE_ID::internal::MapEntry<NetifeScriptCommandRequest_ParamsEntry_DoNotUse, 
+    std::string, std::string,
+    ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::TYPE_STRING,
+    ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::TYPE_STRING> SuperType;
+  NetifeScriptCommandRequest_ParamsEntry_DoNotUse();
+  explicit PROTOBUF_CONSTEXPR NetifeScriptCommandRequest_ParamsEntry_DoNotUse(
+      ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized);
+  explicit NetifeScriptCommandRequest_ParamsEntry_DoNotUse(::PROTOBUF_NAMESPACE_ID::Arena* arena);
+  void MergeFrom(const NetifeScriptCommandRequest_ParamsEntry_DoNotUse& other);
+  static const NetifeScriptCommandRequest_ParamsEntry_DoNotUse* internal_default_instance() { return reinterpret_cast<const NetifeScriptCommandRequest_ParamsEntry_DoNotUse*>(&_NetifeScriptCommandRequest_ParamsEntry_DoNotUse_default_instance_); }
+  static bool ValidateKey(std::string* s) {
+    return ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::VerifyUtf8String(s->data(), static_cast<int>(s->size()), ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::PARSE, "NetifeMessage.NetifeScriptCommandRequest.ParamsEntry.key");
+ }
+  static bool ValidateValue(std::string* s) {
+    return ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::VerifyUtf8String(s->data(), static_cast<int>(s->size()), ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::PARSE, "NetifeMessage.NetifeScriptCommandRequest.ParamsEntry.value");
+ }
+  using ::PROTOBUF_NAMESPACE_ID::Message::MergeFrom;
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+  friend struct ::TableStruct_NetifeMessage_2eproto;
+};
+
+// -------------------------------------------------------------------
+
+class NetifeScriptCommandRequest final :
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:NetifeMessage.NetifeScriptCommandRequest) */ {
+ public:
+  inline NetifeScriptCommandRequest() : NetifeScriptCommandRequest(nullptr) {}
+  ~NetifeScriptCommandRequest() override;
+  explicit PROTOBUF_CONSTEXPR NetifeScriptCommandRequest(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized);
+
+  NetifeScriptCommandRequest(const NetifeScriptCommandRequest& from);
+  NetifeScriptCommandRequest(NetifeScriptCommandRequest&& from) noexcept
+    : NetifeScriptCommandRequest() {
+    *this = ::std::move(from);
+  }
+
+  inline NetifeScriptCommandRequest& operator=(const NetifeScriptCommandRequest& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline NetifeScriptCommandRequest& operator=(NetifeScriptCommandRequest&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetOwningArena() == from.GetOwningArena()
+  #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetOwningArena() != nullptr
+  #endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const NetifeScriptCommandRequest& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const NetifeScriptCommandRequest* internal_default_instance() {
+    return reinterpret_cast<const NetifeScriptCommandRequest*>(
+               &_NetifeScriptCommandRequest_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    13;
+
+  friend void swap(NetifeScriptCommandRequest& a, NetifeScriptCommandRequest& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(NetifeScriptCommandRequest* other) {
+    if (other == this) return;
+  #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() != nullptr &&
+        GetOwningArena() == other->GetOwningArena()) {
+   #else  // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() == other->GetOwningArena()) {
+  #endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(NetifeScriptCommandRequest* other) {
+    if (other == this) return;
+    GOOGLE_DCHECK(GetOwningArena() == other->GetOwningArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  NetifeScriptCommandRequest* New(::PROTOBUF_NAMESPACE_ID::Arena* arena = nullptr) const final {
+    return CreateMaybeMessage<NetifeScriptCommandRequest>(arena);
+  }
+  using ::PROTOBUF_NAMESPACE_ID::Message::CopyFrom;
+  void CopyFrom(const NetifeScriptCommandRequest& from);
+  using ::PROTOBUF_NAMESPACE_ID::Message::MergeFrom;
+  void MergeFrom( const NetifeScriptCommandRequest& from) {
+    NetifeScriptCommandRequest::MergeImpl(*this, from);
+  }
+  private:
+  static void MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROTOBUF_NAMESPACE_ID::Message& from_msg);
+  public:
+  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
+  uint8_t* _InternalSerialize(
+      uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const final { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::PROTOBUF_NAMESPACE_ID::Arena* arena, bool is_message_owned);
+  void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(NetifeScriptCommandRequest* other);
+
+  private:
+  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
+  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
+    return "NetifeMessage.NetifeScriptCommandRequest";
+  }
+  protected:
+  explicit NetifeScriptCommandRequest(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                       bool is_message_owned = false);
+  private:
+  static void ArenaDtor(void* object);
+  public:
+
+  static const ClassData _class_data_;
+  const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*GetClassData() const final;
+
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+
+  // nested types ----------------------------------------------------
+
+
+  // accessors -------------------------------------------------------
+
+  enum : int {
+    kParamsFieldNumber = 3,
+    kScriptNameFieldNumber = 1,
+    kExportFunctionFieldNumber = 2,
+  };
+  // map<string, string> params = 3;
+  int params_size() const;
+  private:
+  int _internal_params_size() const;
+  public:
+  void clear_params();
+  private:
+  const ::PROTOBUF_NAMESPACE_ID::Map< std::string, std::string >&
+      _internal_params() const;
+  ::PROTOBUF_NAMESPACE_ID::Map< std::string, std::string >*
+      _internal_mutable_params();
+  public:
+  const ::PROTOBUF_NAMESPACE_ID::Map< std::string, std::string >&
+      params() const;
+  ::PROTOBUF_NAMESPACE_ID::Map< std::string, std::string >*
+      mutable_params();
+
+  // string script_name = 1;
+  void clear_script_name();
+  const std::string& script_name() const;
+  template <typename ArgT0 = const std::string&, typename... ArgT>
+  void set_script_name(ArgT0&& arg0, ArgT... args);
+  std::string* mutable_script_name();
+  PROTOBUF_NODISCARD std::string* release_script_name();
+  void set_allocated_script_name(std::string* script_name);
+  private:
+  const std::string& _internal_script_name() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_script_name(const std::string& value);
+  std::string* _internal_mutable_script_name();
+  public:
+
+  // string export_function = 2;
+  void clear_export_function();
+  const std::string& export_function() const;
+  template <typename ArgT0 = const std::string&, typename... ArgT>
+  void set_export_function(ArgT0&& arg0, ArgT... args);
+  std::string* mutable_export_function();
+  PROTOBUF_NODISCARD std::string* release_export_function();
+  void set_allocated_export_function(std::string* export_function);
+  private:
+  const std::string& _internal_export_function() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_export_function(const std::string& value);
+  std::string* _internal_mutable_export_function();
+  public:
+
+  // @@protoc_insertion_point(class_scope:NetifeMessage.NetifeScriptCommandRequest)
+ private:
+  class _Internal;
+
+  template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
+  typedef void InternalArenaConstructable_;
+  typedef void DestructorSkippable_;
+  struct Impl_ {
+    ::PROTOBUF_NAMESPACE_ID::internal::MapField<
+        NetifeScriptCommandRequest_ParamsEntry_DoNotUse,
+        std::string, std::string,
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::TYPE_STRING,
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::TYPE_STRING> params_;
+    ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr script_name_;
+    ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr export_function_;
+    mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_NetifeMessage_2eproto;
+};
+// -------------------------------------------------------------------
+
+class NetifeScriptCommandResponse final :
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:NetifeMessage.NetifeScriptCommandResponse) */ {
+ public:
+  inline NetifeScriptCommandResponse() : NetifeScriptCommandResponse(nullptr) {}
+  ~NetifeScriptCommandResponse() override;
+  explicit PROTOBUF_CONSTEXPR NetifeScriptCommandResponse(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized);
+
+  NetifeScriptCommandResponse(const NetifeScriptCommandResponse& from);
+  NetifeScriptCommandResponse(NetifeScriptCommandResponse&& from) noexcept
+    : NetifeScriptCommandResponse() {
+    *this = ::std::move(from);
+  }
+
+  inline NetifeScriptCommandResponse& operator=(const NetifeScriptCommandResponse& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline NetifeScriptCommandResponse& operator=(NetifeScriptCommandResponse&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetOwningArena() == from.GetOwningArena()
+  #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetOwningArena() != nullptr
+  #endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const NetifeScriptCommandResponse& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const NetifeScriptCommandResponse* internal_default_instance() {
+    return reinterpret_cast<const NetifeScriptCommandResponse*>(
+               &_NetifeScriptCommandResponse_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    14;
+
+  friend void swap(NetifeScriptCommandResponse& a, NetifeScriptCommandResponse& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(NetifeScriptCommandResponse* other) {
+    if (other == this) return;
+  #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() != nullptr &&
+        GetOwningArena() == other->GetOwningArena()) {
+   #else  // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() == other->GetOwningArena()) {
+  #endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(NetifeScriptCommandResponse* other) {
+    if (other == this) return;
+    GOOGLE_DCHECK(GetOwningArena() == other->GetOwningArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  NetifeScriptCommandResponse* New(::PROTOBUF_NAMESPACE_ID::Arena* arena = nullptr) const final {
+    return CreateMaybeMessage<NetifeScriptCommandResponse>(arena);
+  }
+  using ::PROTOBUF_NAMESPACE_ID::Message::CopyFrom;
+  void CopyFrom(const NetifeScriptCommandResponse& from);
+  using ::PROTOBUF_NAMESPACE_ID::Message::MergeFrom;
+  void MergeFrom( const NetifeScriptCommandResponse& from) {
+    NetifeScriptCommandResponse::MergeImpl(*this, from);
+  }
+  private:
+  static void MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROTOBUF_NAMESPACE_ID::Message& from_msg);
+  public:
+  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
+  uint8_t* _InternalSerialize(
+      uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const final { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::PROTOBUF_NAMESPACE_ID::Arena* arena, bool is_message_owned);
+  void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(NetifeScriptCommandResponse* other);
+
+  private:
+  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
+  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
+    return "NetifeMessage.NetifeScriptCommandResponse";
+  }
+  protected:
+  explicit NetifeScriptCommandResponse(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                       bool is_message_owned = false);
+  public:
+
+  static const ClassData _class_data_;
+  const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*GetClassData() const final;
+
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  enum : int {
+    kResultFieldNumber = 1,
+  };
+  // string result = 1;
+  void clear_result();
+  const std::string& result() const;
+  template <typename ArgT0 = const std::string&, typename... ArgT>
+  void set_result(ArgT0&& arg0, ArgT... args);
+  std::string* mutable_result();
+  PROTOBUF_NODISCARD std::string* release_result();
+  void set_allocated_result(std::string* result);
+  private:
+  const std::string& _internal_result() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_result(const std::string& value);
+  std::string* _internal_mutable_result();
+  public:
+
+  // @@protoc_insertion_point(class_scope:NetifeMessage.NetifeScriptCommandResponse)
+ private:
+  class _Internal;
+
+  template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
+  typedef void InternalArenaConstructable_;
+  typedef void DestructorSkippable_;
+  struct Impl_ {
+    ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr result_;
+    mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_NetifeMessage_2eproto;
+};
 // ===================================================================
 
 
@@ -5387,9 +5778,204 @@ inline void NetifeScriptDebuggerResponse::set_allocated_ws_port(std::string* ws_
   // @@protoc_insertion_point(field_set_allocated:NetifeMessage.NetifeScriptDebuggerResponse.ws_port)
 }
 
+// -------------------------------------------------------------------
+
+// -------------------------------------------------------------------
+
+// NetifeScriptCommandRequest
+
+// string script_name = 1;
+inline void NetifeScriptCommandRequest::clear_script_name() {
+  _impl_.script_name_.ClearToEmpty();
+}
+inline const std::string& NetifeScriptCommandRequest::script_name() const {
+  // @@protoc_insertion_point(field_get:NetifeMessage.NetifeScriptCommandRequest.script_name)
+  return _internal_script_name();
+}
+template <typename ArgT0, typename... ArgT>
+inline PROTOBUF_ALWAYS_INLINE
+void NetifeScriptCommandRequest::set_script_name(ArgT0&& arg0, ArgT... args) {
+ 
+ _impl_.script_name_.Set(static_cast<ArgT0 &&>(arg0), args..., GetArenaForAllocation());
+  // @@protoc_insertion_point(field_set:NetifeMessage.NetifeScriptCommandRequest.script_name)
+}
+inline std::string* NetifeScriptCommandRequest::mutable_script_name() {
+  std::string* _s = _internal_mutable_script_name();
+  // @@protoc_insertion_point(field_mutable:NetifeMessage.NetifeScriptCommandRequest.script_name)
+  return _s;
+}
+inline const std::string& NetifeScriptCommandRequest::_internal_script_name() const {
+  return _impl_.script_name_.Get();
+}
+inline void NetifeScriptCommandRequest::_internal_set_script_name(const std::string& value) {
+  
+  _impl_.script_name_.Set(value, GetArenaForAllocation());
+}
+inline std::string* NetifeScriptCommandRequest::_internal_mutable_script_name() {
+  
+  return _impl_.script_name_.Mutable(GetArenaForAllocation());
+}
+inline std::string* NetifeScriptCommandRequest::release_script_name() {
+  // @@protoc_insertion_point(field_release:NetifeMessage.NetifeScriptCommandRequest.script_name)
+  return _impl_.script_name_.Release();
+}
+inline void NetifeScriptCommandRequest::set_allocated_script_name(std::string* script_name) {
+  if (script_name != nullptr) {
+    
+  } else {
+    
+  }
+  _impl_.script_name_.SetAllocated(script_name, GetArenaForAllocation());
+#ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  if (_impl_.script_name_.IsDefault()) {
+    _impl_.script_name_.Set("", GetArenaForAllocation());
+  }
+#endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  // @@protoc_insertion_point(field_set_allocated:NetifeMessage.NetifeScriptCommandRequest.script_name)
+}
+
+// string export_function = 2;
+inline void NetifeScriptCommandRequest::clear_export_function() {
+  _impl_.export_function_.ClearToEmpty();
+}
+inline const std::string& NetifeScriptCommandRequest::export_function() const {
+  // @@protoc_insertion_point(field_get:NetifeMessage.NetifeScriptCommandRequest.export_function)
+  return _internal_export_function();
+}
+template <typename ArgT0, typename... ArgT>
+inline PROTOBUF_ALWAYS_INLINE
+void NetifeScriptCommandRequest::set_export_function(ArgT0&& arg0, ArgT... args) {
+ 
+ _impl_.export_function_.Set(static_cast<ArgT0 &&>(arg0), args..., GetArenaForAllocation());
+  // @@protoc_insertion_point(field_set:NetifeMessage.NetifeScriptCommandRequest.export_function)
+}
+inline std::string* NetifeScriptCommandRequest::mutable_export_function() {
+  std::string* _s = _internal_mutable_export_function();
+  // @@protoc_insertion_point(field_mutable:NetifeMessage.NetifeScriptCommandRequest.export_function)
+  return _s;
+}
+inline const std::string& NetifeScriptCommandRequest::_internal_export_function() const {
+  return _impl_.export_function_.Get();
+}
+inline void NetifeScriptCommandRequest::_internal_set_export_function(const std::string& value) {
+  
+  _impl_.export_function_.Set(value, GetArenaForAllocation());
+}
+inline std::string* NetifeScriptCommandRequest::_internal_mutable_export_function() {
+  
+  return _impl_.export_function_.Mutable(GetArenaForAllocation());
+}
+inline std::string* NetifeScriptCommandRequest::release_export_function() {
+  // @@protoc_insertion_point(field_release:NetifeMessage.NetifeScriptCommandRequest.export_function)
+  return _impl_.export_function_.Release();
+}
+inline void NetifeScriptCommandRequest::set_allocated_export_function(std::string* export_function) {
+  if (export_function != nullptr) {
+    
+  } else {
+    
+  }
+  _impl_.export_function_.SetAllocated(export_function, GetArenaForAllocation());
+#ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  if (_impl_.export_function_.IsDefault()) {
+    _impl_.export_function_.Set("", GetArenaForAllocation());
+  }
+#endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  // @@protoc_insertion_point(field_set_allocated:NetifeMessage.NetifeScriptCommandRequest.export_function)
+}
+
+// map<string, string> params = 3;
+inline int NetifeScriptCommandRequest::_internal_params_size() const {
+  return _impl_.params_.size();
+}
+inline int NetifeScriptCommandRequest::params_size() const {
+  return _internal_params_size();
+}
+inline void NetifeScriptCommandRequest::clear_params() {
+  _impl_.params_.Clear();
+}
+inline const ::PROTOBUF_NAMESPACE_ID::Map< std::string, std::string >&
+NetifeScriptCommandRequest::_internal_params() const {
+  return _impl_.params_.GetMap();
+}
+inline const ::PROTOBUF_NAMESPACE_ID::Map< std::string, std::string >&
+NetifeScriptCommandRequest::params() const {
+  // @@protoc_insertion_point(field_map:NetifeMessage.NetifeScriptCommandRequest.params)
+  return _internal_params();
+}
+inline ::PROTOBUF_NAMESPACE_ID::Map< std::string, std::string >*
+NetifeScriptCommandRequest::_internal_mutable_params() {
+  return _impl_.params_.MutableMap();
+}
+inline ::PROTOBUF_NAMESPACE_ID::Map< std::string, std::string >*
+NetifeScriptCommandRequest::mutable_params() {
+  // @@protoc_insertion_point(field_mutable_map:NetifeMessage.NetifeScriptCommandRequest.params)
+  return _internal_mutable_params();
+}
+
+// -------------------------------------------------------------------
+
+// NetifeScriptCommandResponse
+
+// string result = 1;
+inline void NetifeScriptCommandResponse::clear_result() {
+  _impl_.result_.ClearToEmpty();
+}
+inline const std::string& NetifeScriptCommandResponse::result() const {
+  // @@protoc_insertion_point(field_get:NetifeMessage.NetifeScriptCommandResponse.result)
+  return _internal_result();
+}
+template <typename ArgT0, typename... ArgT>
+inline PROTOBUF_ALWAYS_INLINE
+void NetifeScriptCommandResponse::set_result(ArgT0&& arg0, ArgT... args) {
+ 
+ _impl_.result_.Set(static_cast<ArgT0 &&>(arg0), args..., GetArenaForAllocation());
+  // @@protoc_insertion_point(field_set:NetifeMessage.NetifeScriptCommandResponse.result)
+}
+inline std::string* NetifeScriptCommandResponse::mutable_result() {
+  std::string* _s = _internal_mutable_result();
+  // @@protoc_insertion_point(field_mutable:NetifeMessage.NetifeScriptCommandResponse.result)
+  return _s;
+}
+inline const std::string& NetifeScriptCommandResponse::_internal_result() const {
+  return _impl_.result_.Get();
+}
+inline void NetifeScriptCommandResponse::_internal_set_result(const std::string& value) {
+  
+  _impl_.result_.Set(value, GetArenaForAllocation());
+}
+inline std::string* NetifeScriptCommandResponse::_internal_mutable_result() {
+  
+  return _impl_.result_.Mutable(GetArenaForAllocation());
+}
+inline std::string* NetifeScriptCommandResponse::release_result() {
+  // @@protoc_insertion_point(field_release:NetifeMessage.NetifeScriptCommandResponse.result)
+  return _impl_.result_.Release();
+}
+inline void NetifeScriptCommandResponse::set_allocated_result(std::string* result) {
+  if (result != nullptr) {
+    
+  } else {
+    
+  }
+  _impl_.result_.SetAllocated(result, GetArenaForAllocation());
+#ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  if (_impl_.result_.IsDefault()) {
+    _impl_.result_.Set("", GetArenaForAllocation());
+  }
+#endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  // @@protoc_insertion_point(field_set_allocated:NetifeMessage.NetifeScriptCommandResponse.result)
+}
+
 #ifdef __GNUC__
   #pragma GCC diagnostic pop
 #endif  // __GNUC__
+// -------------------------------------------------------------------
+
+// -------------------------------------------------------------------
+
+// -------------------------------------------------------------------
+
 // -------------------------------------------------------------------
 
 // -------------------------------------------------------------------

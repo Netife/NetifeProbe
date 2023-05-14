@@ -294,6 +294,7 @@ NetifeService::Service::~Service() {
 
 static const char* NetifePost_method_names[] = {
   "/NetifeMessage.NetifePost/UploadRequest",
+  "/NetifeMessage.NetifePost/UseScriptCommand",
 };
 
 std::unique_ptr< NetifePost::Stub> NetifePost::NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options) {
@@ -304,6 +305,7 @@ std::unique_ptr< NetifePost::Stub> NetifePost::NewStub(const std::shared_ptr< ::
 
 NetifePost::Stub::Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options)
   : channel_(channel), rpcmethod_UploadRequest_(NetifePost_method_names[0], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_UseScriptCommand_(NetifePost_method_names[1], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
   {}
 
 ::grpc::Status NetifePost::Stub::UploadRequest(::grpc::ClientContext* context, const ::NetifeMessage::NetifeProbeRequest& request, ::NetifeMessage::NetifeProbeResponse* response) {
@@ -329,6 +331,29 @@ void NetifePost::Stub::async::UploadRequest(::grpc::ClientContext* context, cons
   return result;
 }
 
+::grpc::Status NetifePost::Stub::UseScriptCommand(::grpc::ClientContext* context, const ::NetifeMessage::NetifeScriptCommandRequest& request, ::NetifeMessage::NetifeScriptCommandResponse* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::NetifeMessage::NetifeScriptCommandRequest, ::NetifeMessage::NetifeScriptCommandResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_UseScriptCommand_, context, request, response);
+}
+
+void NetifePost::Stub::async::UseScriptCommand(::grpc::ClientContext* context, const ::NetifeMessage::NetifeScriptCommandRequest* request, ::NetifeMessage::NetifeScriptCommandResponse* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::NetifeMessage::NetifeScriptCommandRequest, ::NetifeMessage::NetifeScriptCommandResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_UseScriptCommand_, context, request, response, std::move(f));
+}
+
+void NetifePost::Stub::async::UseScriptCommand(::grpc::ClientContext* context, const ::NetifeMessage::NetifeScriptCommandRequest* request, ::NetifeMessage::NetifeScriptCommandResponse* response, ::grpc::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_UseScriptCommand_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::NetifeMessage::NetifeScriptCommandResponse>* NetifePost::Stub::PrepareAsyncUseScriptCommandRaw(::grpc::ClientContext* context, const ::NetifeMessage::NetifeScriptCommandRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::NetifeMessage::NetifeScriptCommandResponse, ::NetifeMessage::NetifeScriptCommandRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_UseScriptCommand_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::NetifeMessage::NetifeScriptCommandResponse>* NetifePost::Stub::AsyncUseScriptCommandRaw(::grpc::ClientContext* context, const ::NetifeMessage::NetifeScriptCommandRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncUseScriptCommandRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
+
 NetifePost::Service::Service() {
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       NetifePost_method_names[0],
@@ -340,12 +365,29 @@ NetifePost::Service::Service() {
              ::NetifeMessage::NetifeProbeResponse* resp) {
                return service->UploadRequest(ctx, req, resp);
              }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      NetifePost_method_names[1],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< NetifePost::Service, ::NetifeMessage::NetifeScriptCommandRequest, ::NetifeMessage::NetifeScriptCommandResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](NetifePost::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::NetifeMessage::NetifeScriptCommandRequest* req,
+             ::NetifeMessage::NetifeScriptCommandResponse* resp) {
+               return service->UseScriptCommand(ctx, req, resp);
+             }, this)));
 }
 
 NetifePost::Service::~Service() {
 }
 
 ::grpc::Status NetifePost::Service::UploadRequest(::grpc::ServerContext* context, const ::NetifeMessage::NetifeProbeRequest* request, ::NetifeMessage::NetifeProbeResponse* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status NetifePost::Service::UseScriptCommand(::grpc::ServerContext* context, const ::NetifeMessage::NetifeScriptCommandRequest* request, ::NetifeMessage::NetifeScriptCommandResponse* response) {
   (void) context;
   (void) request;
   (void) response;
