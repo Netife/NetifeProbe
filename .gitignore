@@ -3,3 +3,4 @@
 /.vscode/
 /.idea/
 /cmake-build-debug-visual-studio/
+cmake-build-debug/
