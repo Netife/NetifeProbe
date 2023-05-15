@@ -36,7 +36,7 @@ target_link_libraries(NetifeProbe PRIVATE
         protobuf::libprotoc protobuf::libprotobuf protobuf::libprotobuf-lite)
 target_link_libraries(NetifeProbe PRIVATE Poco::Foundation)
 # divert
-target_link_libraries(NetifeProbe PRIVATE WinDivert.lib Ws2_32 shlwapi)
+target_link_libraries(NetifeProbe PRIVATE WinDivert.lib Ws2_32 shlwapi mswsock)
 
 
 

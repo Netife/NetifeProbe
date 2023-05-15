@@ -12,6 +12,7 @@
 #include <thread>
 #include <mutex>
 #include <map>
+#include <mswsock.h>
 
 #pragma comment(lib, "WinDivert.lib")
 #pragma comment(lib, "Ws2_32.lib")
@@ -26,7 +27,8 @@ enum class EventIOType {
     ServerIORead, // 代理服务器作为服务器端时的 IO 读
     ServerIOWrite,
     ClientIORead, // 代理服务器作为客户端时的 IO 读
-    ClientIOWrite
+    ClientIOWrite,
+    ServerIOAccept // 代理服务器接收到的连接请求
 };
 
 
@@ -38,7 +40,8 @@ struct IOContext {
     EventIOType type{};
     SOCKET socket = INVALID_SOCKET;
     DWORD nBytes = 0;
-    sockaddr_in addr{};
+    sockaddr_in addr{}; // 保存拆解好的地址
+    sockaddr_storage addresses[2]{}; // 保存本地地址和远程地址，第二个是 remote
     SOCKET altSocket = INVALID_SOCKET; // 过渡使用的，传递最开始的 accept 后的socket
     UINT16 seq = 1; // seq:6 = 1;
     // 一个tcp数据包理论最大值是 65535，1024 * 60，2 的 6 次方是64，刚好可以容纳
@@ -107,6 +110,10 @@ public:
      */
     void eventWorkerThread();
 
+    /**
+     * 创建一个新的异步accept
+     */
+    int newAccept();
 
 private:
     /**

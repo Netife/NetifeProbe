@@ -137,6 +137,18 @@ void ProxyServer::startServer(_In_ int maxWaitList,
     }
 
 
+    // 切记，先把serverSockerFD和iocp绑定，不然接收不到连接通知
+    if (nullptr == CreateIoCompletionPort(
+            (HANDLE)serverSocketFD,
+            hIOCP,
+            0,
+            0)) {
+        shutdown(serverSocketFD, SD_BOTH);
+        closesocket(serverSocketFD);
+        exit(-13);
+    }
+
+
     // 初始化工作线程
     for (size_t i = 0; i < NumberOfThreads; i++) {
         threadGroup.emplace_back([this]() { eventWorkerThread(); });
@@ -149,9 +161,19 @@ void ProxyServer::startServer(_In_ int maxWaitList,
     }
 
 
-    // 启动检测 accept 消息的线程
+
+    std::cout << newAccept() <<std::endl;
+    std::cout << newAccept() <<std::endl;
+    std::cout << newAccept() <<std::endl;
+    std::cout << newAccept() <<std::endl;
+    std::cout << newAccept() <<std::endl;
+    std::cout << newAccept() <<std::endl;
+    std::cout << newAccept() <<std::endl;
+    std::cout << newAccept() <<std::endl;
+
+/*    // 启动检测 accept 消息的线程
     acceptThread = std::thread([this]() { acceptWorkerThread(); });
-    acceptThread.detach();
+    acceptThread.detach();*/
 
 
 }
@@ -249,8 +271,9 @@ void ProxyServer::eventWorkerThread() {
         // 收到 PostQueuedCompletionStatus 发出的退出指令
         if (lpNumberOfBytesTransferred == -1) break;
 
-        // 没有可操作数据
-        if (lpNumberOfBytesTransferred == 0) continue;
+        puts("ininiin");
+        // 没有可操作数据，但是是连接请求，需要接受！
+//        if (lpNumberOfBytesTransferred == 0) continue;
 
         cout << ioContext->nBytes << endl;
         // 读取或者发送的字节长度，这里 += 是累计之前的所有数据
@@ -262,6 +285,58 @@ void ProxyServer::eventWorkerThread() {
         cerr << "iocp " << lpNumberOfBytesTransferred << endl;
         // 处理对应的事件
         switch (ioContext->type) {
+
+            case EventIOType::ServerIOAccept:{
+                // 继续等待新连接！
+                newAccept();
+
+                puts("come in!!!");
+
+                auto newAddr =
+                        *reinterpret_cast<sockaddr_in*>
+                        (&ioContext->addresses[1]);
+
+                WCHAR ipDotDec[20]{};
+                InetNtop(AF_INET,
+                         (void *) &newAddr.sin_addr,
+                         ipDotDec,
+                         sizeof(ipDotDec));
+                std::wcout << L"new accept event: to " << ipDotDec << std::endl;
+
+
+
+                auto clientSocket = ioContext->socket;
+                // 这里执行第一次异步接收，之后的请求处理也交给工作线程来完成
+                // 复用上一个 IOContext 对象，并且修改类型
+                ioContext->type = EventIOType::ServerIORead;
+                ioContext->buffer = new CHAR[MaxBufferSize]{};
+                ioContext->wsaBuf = {MaxBufferSize, ioContext->buffer};
+                ioContext->addr = newAddr;
+                ioContext->altSocket = clientSocket;
+                auto rt = WSARecv(
+                        clientSocket,
+                        &ioContext->wsaBuf,
+                        1,
+                        &nBytes, // 接收到的数据长度
+                        &dwFlags,
+                        &ioContext->overlapped,
+                        nullptr);
+                auto err = WSAGetLastError();
+                if (SOCKET_ERROR == rt && ERROR_IO_PENDING != err) {
+                    std::cerr << "err0 receive" << std::endl;
+                    // 发生不为 ERROR_IO_PENDING 的错误
+                    shutdown(clientSocket, SD_BOTH);
+                    closesocket(clientSocket);
+                    delete ioContext;
+                    ioContext = nullptr;
+                }
+
+
+
+                break;
+            }
+
+
             case EventIOType::ServerIORead: {
 
                 /*****************************************************************
@@ -659,6 +734,57 @@ int ProxyServer::commitData(_In_ const std::string &originData,
                                 serverAddr,
                                 isOutBound,
                                 newData);
+
+}
+
+int ProxyServer::newAccept() {
+    // 这里创建最初的 io上下文
+    auto ioContext = new IOContext;
+    ioContext->type = EventIOType::ServerIOAccept;
+    //提前准备好 clientSocketFD
+    ioContext->socket = WSASocket(AF_INET,
+                                    SOCK_STREAM,
+                                    IPPROTO_TCP,
+                                    nullptr,
+                                    0,
+                                    WSA_FLAG_OVERLAPPED);
+
+
+
+
+
+
+    // 切记，也要和iocp绑定，不然后续send recv事件没办法通知
+    if (nullptr == CreateIoCompletionPort(
+            (HANDLE)ioContext->socket,
+            hIOCP,
+            0,
+            0)) {
+        shutdown(ioContext->socket, SD_BOTH);
+        closesocket(ioContext->socket);
+        exit(-15);
+    }
+
+    //存放网络地址的长度
+    int addrLen = sizeof(sockaddr_storage);
+    std::cout << " sizeof(sockaddr_in) =" << sizeof(sockaddr_in)<<std::endl;
+    std::cout << " sizeof(sockaddr_storage) =" << sizeof(sockaddr_storage)<<std::endl;
+
+    int bRetVal = AcceptEx(serverSocketFD, ioContext->socket, ioContext->addresses,
+                           0, addrLen, addrLen,
+                           nullptr, &ioContext->overlapped);
+    if (bRetVal == FALSE)
+    {
+        int error = WSAGetLastError();
+        if (error != WSA_IO_PENDING)
+        {
+            std::cerr << WSAGetLastError() << std::endl;
+            closesocket(ioContext->socket);
+            return 0;
+        }
+    }
+
+    return 1;
 
 }
 
