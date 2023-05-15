@@ -465,6 +465,7 @@ void ProxyServer::eventWorkerThread() {
                 puts("DDDDDDDDDDDDDDDAaa");
 
 
+                // TODO 这部分逻辑应当移动到上面
                 auto newIoContext = new IOContext;
                 newIoContext->buffer = new CHAR[MaxBufferSize]{};
                 newIoContext->wsaBuf = {MaxBufferSize, newIoContext->buffer};
@@ -500,6 +501,11 @@ void ProxyServer::eventWorkerThread() {
                     delete newIoContext;
                     newIoContext = nullptr;
                 }
+
+
+
+
+
 
 
                 break;
