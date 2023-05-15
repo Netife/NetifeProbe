@@ -15,9 +15,8 @@ using Poco::UUIDGenerator;
 
 //#define PROXY_PORT 34010
 #define PROXY_PORT 9999
-#define SSL_SERVER_PORT 443
+//#define SSL_SERVER_PORT 443
 #define SERVER_PORT 80
-
 
 
 #define GRPC_DEBUG_MODE true

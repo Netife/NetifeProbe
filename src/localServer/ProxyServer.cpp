@@ -273,50 +273,39 @@ void ProxyServer::eventWorkerThread() {
                 if (MaxBufferSize == lpNumberOfBytesTransferred) {
                     puts("PPPPPP");
 
-                    // 重新生成 IOContext
-                    auto newIOContext = new IOContext;
-                    newIOContext->socket = ioContext->socket;
-                    newIOContext->addr = ioContext->addr;
-                    newIOContext->type = ioContext->type;
+                    // 生成新的 buf
                     // 每次开辟内存 以 MaxBufferSize 为单位递增
-                    newIOContext->buffer = new CHAR[MaxBufferSize * (ioContext->seq + 1)];
-                    newIOContext->wsaBuf = { // 将要存放数据的地址范围以这里为准
-                            static_cast<ULONG>(MaxBufferSize),
-                            newIOContext->buffer + MaxBufferSize * (ioContext->seq)
-                    };
-                    newIOContext->overlapped = ioContext->overlapped;
-                    newIOContext->seq = ioContext->seq + 1;
-                    newIOContext->nBytes = ioContext->nBytes;
-                    newIOContext->overlapped = ioContext->overlapped;
-                    newIOContext->altSocket = ioContext->altSocket; // 传1
-
+                    auto newBuf = new CHAR[MaxBufferSize * (ioContext->seq + 1)];
                     // 相比 memcpy 不会出现内存地址重叠时拷贝覆盖的情况
-                    memmove(newIOContext->buffer,
+                    memmove(newBuf,
                             ioContext->buffer,
                             MaxBufferSize * ioContext->seq);
-                    // 释放旧的IO上下文指针空间
-                    delete[] ioContext->buffer;
-                    ioContext->buffer = nullptr;
-                    delete[] ioContext;
-                    ioContext = nullptr;
+                    delete[] ioContext->buffer; // 释放之前的空间
+                    ioContext->buffer = newBuf; // 使用新的空间
+                    ioContext->wsaBuf = { // 将要存放数据的地址范围以这里为准
+                            static_cast<ULONG>(MaxBufferSize),
+                            ioContext->buffer + MaxBufferSize * (ioContext->seq)
+                    };
+                    // 标识缓冲区扩大后的情况
+                    ++ioContext->seq;
 
-                    // 使用新的 IOContext 继续发送
+                    // 使用新的，扩大后的 IOContext 继续发送
                     auto rtOfReceive = WSARecv(
-                            newIOContext->socket,
-                            &newIOContext->wsaBuf, // 数据放在这里
+                            ioContext->socket,
+                            &ioContext->wsaBuf, // 数据放在这里
                             1,
                             &nBytes, // 接收到的数据长度,不过这里不修改重叠结构，通知的时候再修改
                             &dwFlags,
-                            &newIOContext->overlapped,
+                            &ioContext->overlapped,
                             nullptr);
                     auto err = WSAGetLastError();
                     if (SOCKET_ERROR == rtOfReceive && ERROR_IO_PENDING != err) {
                         std::cerr << "err0 receive" << std::endl;
                         // 发生不为 ERROR_IO_PENDING 的错误
-                        shutdown(newIOContext->socket, SD_BOTH);
-                        closesocket(newIOContext->socket);
-                        delete newIOContext;
-                        newIOContext = nullptr;
+                        shutdown(ioContext->socket, SD_BOTH);
+                        closesocket(ioContext->socket);
+                        delete ioContext;
+                        ioContext = nullptr;
                     }
 
                     // 跳过下面的逻辑
@@ -399,7 +388,7 @@ void ProxyServer::eventWorkerThread() {
 
 
 
-                // Connect!!
+                // Connect!! TODO 有时间可以改成异步 ConnectEx
                 int flag;
                 flag = connect(
                         newClientSocketFD,
@@ -525,50 +514,42 @@ void ProxyServer::eventWorkerThread() {
                     puts("AAAAAAAAAGFQAGHAFDH");
 
                     // 重新生成 IOContext
-                    auto newIOContext = new IOContext;
-                    newIOContext->socket = ioContext->socket;
-                    newIOContext->addr = ioContext->addr;
-                    newIOContext->type = ioContext->type;
+
+
                     // 每次开辟内存 以 MaxBufferSize 为单位递增
-                    newIOContext->buffer = new CHAR[MaxBufferSize * (ioContext->seq + 1)];
-                    newIOContext->wsaBuf = { // 将要存放数据的地址范围以这里为准
-                            static_cast<ULONG>(MaxBufferSize),
-                            newIOContext->buffer + MaxBufferSize * (ioContext->seq)
-                    };
-//                    newIOContext->overlapped = ioContext->overlapped;
-                    newIOContext->seq = ioContext->seq + 1;
-                    newIOContext->nBytes = ioContext->nBytes;
-
-
-                    newIOContext->altSocket = ioContext->altSocket; // 传4
+                    auto newBuf = new CHAR[MaxBufferSize * (ioContext->seq + 1)];
 
                     // 相比 memcpy 不会出现内存地址重叠时拷贝覆盖的情况
-                    memmove(newIOContext->buffer,
+                    memmove(newBuf,
                             ioContext->buffer,
                             MaxBufferSize * ioContext->seq);
-                    // 释放旧的IO上下文指针空间
+
                     delete[] ioContext->buffer;
-                    ioContext->buffer = nullptr;
-                    delete[] ioContext;
-                    ioContext = nullptr;
+                    ioContext->buffer = newBuf;
+                    ioContext->wsaBuf = { // 将要存放数据的地址范围以这里为准
+                            static_cast<ULONG>(MaxBufferSize),
+                            ioContext->buffer + MaxBufferSize * (ioContext->seq)
+                    };
+                    ++ioContext->seq;
+
 
                     // 使用新的 IOContext 继续接收
                     auto rtOfReceive = WSARecv(
-                            newIOContext->socket,
-                            &newIOContext->wsaBuf, // 数据放在这里
+                            ioContext->socket,
+                            &ioContext->wsaBuf, // 数据放在这里
                             1,
                             &nBytes, // 接收到的数据长度,不过这里不修改重叠结构，通知的时候再修改
                             &dwFlags,
-                            &newIOContext->overlapped,
+                            &ioContext->overlapped,
                             nullptr);
                     auto err = WSAGetLastError();
                     if (SOCKET_ERROR == rtOfReceive && ERROR_IO_PENDING != err) {
                         std::cerr << "err0 receive" << std::endl;
                         // 发生不为 ERROR_IO_PENDING 的错误
-                        shutdown(newIOContext->socket, SD_BOTH);
-                        closesocket(newIOContext->socket);
-                        delete newIOContext;
-                        newIOContext = nullptr;
+                        shutdown(ioContext->socket, SD_BOTH);
+                        closesocket(ioContext->socket);
+                        delete ioContext;
+                        ioContext = nullptr;
                     }
 
                     // 跳过下面的逻辑

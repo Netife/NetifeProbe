@@ -160,7 +160,7 @@ void PacketDivert::startDivert(const std::function<void(WINDIVERT_ADDRESS &)> &d
 			myThreadMutex.lock();
 			for (auto iter = sniffedAddrList.begin(); iter != sniffedAddrList.end();)
 			{
-				if (memcmp(&(*iter).Flow, &addr.Flow, sizeof(addr.Flow)) == 0)
+				if (memmove(&(*iter).Flow, &addr.Flow, sizeof(addr.Flow)) == 0)
 				{
 					sniffedAddrList.erase(iter++);
 					break;
