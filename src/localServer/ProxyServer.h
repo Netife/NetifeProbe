@@ -43,6 +43,8 @@ struct IOContext {
     sockaddr_in addr{}; // 保存拆解好的地址
     sockaddr_storage addresses[2]{}; // 保存本地地址和远程地址，第二个是 remote
     SOCKET altSocket = INVALID_SOCKET; // 过渡使用的，传递最开始的 accept 后的socket
+    std::string sendToClient; // 要回复给客户端的数据
+    std::string sendToServer; // 要发给远程服务器的数据
     UINT16 seq = 1; // seq:6 = 1;
     // 一个tcp数据包理论最大值是 65535，1024 * 60，2 的 6 次方是64，刚好可以容纳
     // TODO 后续有时间将 C++ 版本提升至20 并使用使用位域重构
