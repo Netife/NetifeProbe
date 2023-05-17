@@ -313,7 +313,7 @@ void ProxyServer::eventWorkerThread() {
                 ioContext->wsaBuf = {MaxBufferSize, ioContext->buffer};
                 ioContext->addr = newAddr;
                 ioContext->altSocket = clientSocket;
-                auto rt = WSARecv(
+                auto rtOfReceive = WSARecv(
                         clientSocket,
                         &ioContext->wsaBuf,
                         1,
@@ -321,8 +321,8 @@ void ProxyServer::eventWorkerThread() {
                         &dwFlags,
                         &ioContext->overlapped,
                         nullptr);
-                auto err = WSAGetLastError();
-                if (SOCKET_ERROR == rt && ERROR_IO_PENDING != err) {
+                auto errReceive = WSAGetLastError();
+                if (SOCKET_ERROR == rtOfReceive && ERROR_IO_PENDING != errReceive) {
                     std::cerr << "err0 receive" << std::endl;
                     // 发生不为 ERROR_IO_PENDING 的错误
                     shutdown(clientSocket, SD_BOTH);
@@ -373,8 +373,8 @@ void ProxyServer::eventWorkerThread() {
                             &dwFlags,
                             &ioContext->overlapped,
                             nullptr);
-                    auto err = WSAGetLastError();
-                    if (SOCKET_ERROR == rtOfReceive && ERROR_IO_PENDING != err) {
+                    auto errReceive = WSAGetLastError();
+                    if (SOCKET_ERROR == rtOfReceive && ERROR_IO_PENDING != errReceive) {
                         std::cerr << "err0 receive" << std::endl;
                         // 发生不为 ERROR_IO_PENDING 的错误
                         shutdown(ioContext->socket, SD_BOTH);
@@ -516,8 +516,8 @@ void ProxyServer::eventWorkerThread() {
                         &(newClientIoContext->overlapped),
                         nullptr);
 
-                auto err = WSAGetLastError();
-                if (SOCKET_ERROR == rtOfSend && err != WSAGetLastError()) {
+                auto errSend = WSAGetLastError();
+                if (SOCKET_ERROR == rtOfSend && errSend != WSAGetLastError()) {
                     std::cerr << "err occur when send to remove server " << WSAGetLastError() << std::endl;
                     // 返回信息发生错误
                     closesocket(newClientIoContext->socket);
@@ -557,7 +557,7 @@ void ProxyServer::eventWorkerThread() {
 
 
 
-                auto rtOfRec = WSARecv(
+                auto rtOfReceive = WSARecv(
                         newIoContext->socket,
                         &newIoContext->wsaBuf,
                         1,
@@ -565,8 +565,8 @@ void ProxyServer::eventWorkerThread() {
                         &dwFlags, // 不使用
                         &newIoContext->overlapped,
                         nullptr);
-                auto err = WSAGetLastError();
-                if (SOCKET_ERROR == rtOfRec && ERROR_IO_PENDING != err) {
+                auto errReceive = WSAGetLastError();
+                if (SOCKET_ERROR == rtOfReceive && ERROR_IO_PENDING != errReceive) {
                     std::cerr << "err receive data from remote server :" << WSAGetLastError() << std::endl;
                     // 发生不为 ERROR_IO_PENDING 的错误
                     shutdown(newIoContext->socket, SD_BOTH);
@@ -623,8 +623,8 @@ void ProxyServer::eventWorkerThread() {
                             &dwFlags,
                             &ioContext->overlapped,
                             nullptr);
-                    auto err = WSAGetLastError();
-                    if (SOCKET_ERROR == rtOfReceive && ERROR_IO_PENDING != err) {
+                    auto errReceive = WSAGetLastError();
+                    if (SOCKET_ERROR == rtOfReceive && ERROR_IO_PENDING != errReceive) {
                         std::cerr << "err0 receive" << std::endl;
                         // 发生不为 ERROR_IO_PENDING 的错误
                         shutdown(ioContext->socket, SD_BOTH);
@@ -692,8 +692,8 @@ void ProxyServer::eventWorkerThread() {
                         &(newIoContext->overlapped), // 这个不能写错！！之前写成旧的，结果一直累计，循环同一个case？
                         nullptr);
 
-                auto err = WSAGetLastError();
-                if (SOCKET_ERROR == rtOfSend && err != WSAGetLastError()) {
+                auto errSend = WSAGetLastError();
+                if (SOCKET_ERROR == rtOfSend && errSend != WSAGetLastError()) {
                     std::cerr << "err occur when send to remove server " << WSAGetLastError() << std::endl;
                     // 返回信息发生错误
                     closesocket(newIoContext->socket);
