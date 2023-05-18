@@ -12,48 +12,50 @@
 
 #include <psapi.h>
 #include <shlwapi.h>
+
 #define MAX_FLOWS           256
-#define INET6_ADDRSTRLEN    45
+
 
 #include "../../include/windivert.h"
 
 
-class PacketDivert
-{
+class PacketDivert {
 
 private:
-	HANDLE handle = nullptr;
+    HANDLE handle = nullptr;
 
-	std::map<UINT,UINT32>* mapPortWithPID = nullptr; /* 端口和pid的映射 */
-	std::list<WINDIVERT_ADDRESS> sniffedAddrList; /* 嗅探到的包地址信息 */
-
-
-	const char* packetFilter = nullptr;
-	WINDIVERT_LAYER filterLayer = WINDIVERT_LAYER_NETWORK;
-	UINT64 modeFlag = 0;
+    std::map<UINT, UINT32> *mapPortWithPID = nullptr; /* 端口和pid的映射 */
+    std::list<WINDIVERT_ADDRESS> sniffedAddrList; /* 嗅探到的包地址信息 */
 
 
+    const char *packetFilter = nullptr;
+    WINDIVERT_LAYER filterLayer = WINDIVERT_LAYER_NETWORK;
+    UINT64 modeFlag = 0;
 
 
-	UINT packetLength = 0;
-	bool isLoop = false;
+    UINT packetLength = 0;
+    bool isLoop = false;
 
-	PWINDIVERT_IPHDR ipHeader = nullptr;
-	PWINDIVERT_TCPHDR tcpHeader = nullptr;
+    PWINDIVERT_IPHDR ipHeader = nullptr;
+    PWINDIVERT_TCPHDR tcpHeader = nullptr;
 
-	std::mutex myThreadMutex;
+    std::mutex myThreadMutex;
 
 public:
-	PacketDivert() = default;
-    explicit PacketDivert(const char* packetFilter,
+    PacketDivert() = default;
+
+    explicit PacketDivert(const char *packetFilter,
                           WINDIVERT_LAYER filterLayer = WINDIVERT_LAYER_NETWORK, UINT64 modeFlag = 0);
-	~PacketDivert();
 
-	void startDivert(const std::function<void(PWINDIVERT_IPHDR&, PWINDIVERT_TCPHDR&, WINDIVERT_ADDRESS&)>& dealFunc);
+    ~PacketDivert();
 
-	void startDivert(const std::function<void(WINDIVERT_ADDRESS &)> &dealFunc,
-                     std::map<UINT,UINT32>* mapPortPID = nullptr);
-	void handleFlow();
+    void startDivert(const std::function<void(PWINDIVERT_IPHDR &, PWINDIVERT_TCPHDR &, WINDIVERT_ADDRESS &)> &dealFunc);
+
+    void startDivert(const std::function<void(WINDIVERT_ADDRESS &)> &dealFunc,
+                     std::map<UINT, UINT32> *mapPortPID = nullptr);
+
+    void handleFlow();
 
 };
+
 #endif
