@@ -139,7 +139,7 @@ void ProxyServer::startServer(_In_ int maxWaitList,
 
     // 切记，先把serverSockerFD和iocp绑定，不然接收不到连接通知
     if (nullptr == CreateIoCompletionPort(
-            (HANDLE)serverSocketFD,
+            (HANDLE) serverSocketFD,
             hIOCP,
             0,
             0)) {
@@ -161,9 +161,7 @@ void ProxyServer::startServer(_In_ int maxWaitList,
     }
 
 
-
-
-    for (auto i = 0;i < 100;i++){
+    for (auto i = 0; i < 100; i++) {
         newAccept();
     }
 
@@ -175,72 +173,6 @@ void ProxyServer::startServer(_In_ int maxWaitList,
 }
 
 
-void ProxyServer::acceptWorkerThread() {
-    while (!isShutdown) {
-        // 开始监听接入
-        struct sockaddr_in clientSocketAddr{};// = serverSocketAddr;
-        // {};,不能重用 address，否则会出现地址冲突！
-        int clientAddrLen = sizeof(clientSocketAddr);
-        SOCKET clientSocket = accept(
-                serverSocketFD,
-                (sockaddr *) &clientSocketAddr,
-                &clientAddrLen);
-        if (INVALID_SOCKET == clientSocket) continue;
-
-
-        unsigned long ul = 1;
-        if (SOCKET_ERROR == ioctlsocket(
-                clientSocket,
-                FIONBIO,
-                &ul)) {
-            shutdown(clientSocket, SD_BOTH);
-            closesocket(clientSocket);
-            continue;
-        }
-
-        // 将句柄和完成端口关联起来
-        if (nullptr == CreateIoCompletionPort(
-                (HANDLE) clientSocket,
-                hIOCP,
-                0,
-                0)) {
-            shutdown(clientSocket, SD_BOTH);
-            closesocket(clientSocket);
-            continue;
-        }
-
-
-        // 开始接受请求，这里执行第一次异步接收，之后的请求处理交给工作线程来完成
-        DWORD nBytes = MaxBufferSize;
-        DWORD dwFlags = 0;
-        auto ioContext = new IOContext;
-        ioContext->buffer = new CHAR[MaxBufferSize]{};
-        ioContext->wsaBuf = {MaxBufferSize, ioContext->buffer};
-
-        ioContext->socket = clientSocket;
-        ioContext->type = EventIOType::ServerIORead;
-        ioContext->addr = clientSocketAddr;
-        ioContext->altSocket = clientSocket;
-        auto rt = WSARecv(
-                clientSocket,
-                &ioContext->wsaBuf,
-                1,
-                &nBytes, // 接收到的数据长度
-                &dwFlags,
-                &ioContext->overlapped,
-                nullptr);
-        auto err = WSAGetLastError();
-        if (SOCKET_ERROR == rt && ERROR_IO_PENDING != err) {
-            std::cerr << "err0 receive" << std::endl;
-            // 发生不为 ERROR_IO_PENDING 的错误
-            shutdown(clientSocket, SD_BOTH);
-            closesocket(clientSocket);
-            delete ioContext;
-            ioContext = nullptr;
-        }
-
-    }
-}
 
 
 void ProxyServer::eventWorkerThread() {
@@ -282,14 +214,12 @@ void ProxyServer::eventWorkerThread() {
         // 处理对应的事件
         switch (ioContext->type) {
 
-            case EventIOType::ServerIOAccept:{
+            case EventIOType::ServerIOAccept: {
                 // 继续等待新连接！
                 newAccept();
 
-                puts("come in!!!");
-
                 auto newAddr =
-                        *reinterpret_cast<sockaddr_in*>
+                        *reinterpret_cast<sockaddr_in *>
                         (&ioContext->addresses[1]);
 
                 WCHAR ipDotDec[20]{};
@@ -300,34 +230,16 @@ void ProxyServer::eventWorkerThread() {
                 std::wcout << L"new accept event: to " << ipDotDec << std::endl;
 
 
-
                 auto clientSocket = ioContext->socket;
                 // 这里执行第一次异步接收，之后的请求处理也交给工作线程来完成
                 // 复用上一个 IOContext 对象，并且修改类型
-                ioContext->type = EventIOType::ServerIORead;
+
                 ioContext->buffer = new CHAR[MaxBufferSize]{};
                 ioContext->wsaBuf = {MaxBufferSize, ioContext->buffer};
                 ioContext->addr = newAddr;
                 ioContext->altSocket = clientSocket;
-                auto rtOfReceive = WSARecv(
-                        clientSocket,
-                        &ioContext->wsaBuf,
-                        1,
-                        &nBytes, // 接收到的数据长度
-                        &dwFlags,
-                        &ioContext->overlapped,
-                        nullptr);
-                auto errReceive = WSAGetLastError();
-                if (SOCKET_ERROR == rtOfReceive && ERROR_IO_PENDING != errReceive) {
-                    std::cerr << "err0 receive" << std::endl;
-                    // 发生不为 ERROR_IO_PENDING 的错误
-                    shutdown(clientSocket, SD_BOTH);
-                    closesocket(clientSocket);
-                    delete ioContext;
-                    ioContext = nullptr;
-                }
 
-
+                asyReceive(ioContext, EventIOType::ServerIORead);
 
                 break;
             }
@@ -361,31 +273,14 @@ void ProxyServer::eventWorkerThread() {
                     ++ioContext->seq;
 
                     // 使用新的，扩大后的 IOContext 继续发送
-                    auto rtOfReceive = WSARecv(
-                            ioContext->socket,
-                            &ioContext->wsaBuf, // 数据放在这里
-                            1,
-                            &nBytes, // 接收到的数据长度,不过这里不修改重叠结构，通知的时候再修改
-                            &dwFlags,
-                            &ioContext->overlapped,
-                            nullptr);
-                    auto errReceive = WSAGetLastError();
-                    if (SOCKET_ERROR == rtOfReceive && ERROR_IO_PENDING != errReceive) {
-                        std::cerr << "err0 receive" << std::endl;
-                        // 发生不为 ERROR_IO_PENDING 的错误
-                        shutdown(ioContext->socket, SD_BOTH);
-                        closesocket(ioContext->socket);
-                        delete ioContext;
-                        ioContext = nullptr;
-                    }
 
+                    asyReceive(ioContext, ioContext->type);
                     // 跳过下面的逻辑
                     continue;
 
 
                 }
                 // 到这里说明成功把所有请求读取完毕
-
 
 
 
@@ -398,7 +293,9 @@ void ProxyServer::eventWorkerThread() {
                 std::wcout << ipDotDec << std::endl;
 
 
-                std::string originDataFromClient(ioContext->buffer, ioContext->nBytes); // TODO:看看
+                std::string originDataFromClient(
+                        ioContext->buffer,
+                        ioContext->nBytes);
 
 //                originDataFromClient.push_back('\0');
                 // 这里直接初始化有坑，如果读到的数据有\0，比如接受图片，
@@ -407,7 +304,7 @@ void ProxyServer::eventWorkerThread() {
 
 
 
-                ioContext->sendToServer; // 经其他模块处理后的新数据，要发送给远程服务器
+                ioContext->sendToServer.clear();
                 commitData(originDataFromClient,
                            0,
                            ioContext->addr.sin_addr,
@@ -420,10 +317,9 @@ void ProxyServer::eventWorkerThread() {
                 fflush(stdout);
 
 
-
                 delete[] ioContext->buffer;
                 ioContext->buffer =
-                        const_cast<CHAR*>(ioContext->sendToServer.c_str());
+                        const_cast<CHAR *>(ioContext->sendToServer.c_str());
 
                 ioContext->wsaBuf = {
                         static_cast<ULONG>(ioContext->sendToServer.length()),
@@ -431,7 +327,7 @@ void ProxyServer::eventWorkerThread() {
                 };
 
 
-                puts("LLL");
+                puts("开始请求远程服务器");
 
                 // 开始请求远程服务器，依然 IOCP
                 WSADATA wsaData;
@@ -468,9 +364,11 @@ void ProxyServer::eventWorkerThread() {
                         sizeof(remoteServerAddr));
 
                 if (flag < 0) {
-                    std::cerr << "connect to remote server error:" << WSAGetLastError() << std::endl;
+                    std::cerr << "connect to remote server error:"
+                              << WSAGetLastError()
+                              << std::endl;
+
                     exit(-11);
-                    continue;
                 }
 
                 // 创建 IOCP，和完成端口关联起来
@@ -492,66 +390,19 @@ void ProxyServer::eventWorkerThread() {
 
                 // IOCP 请求发送
 
-                        // 要发的数据一定是完整的，不必担心「缓冲区」的问题
+                // 要发的数据一定是完整的，不必担心「缓冲区」的问题
 
                 ioContext->type = EventIOType::ClientIOWrite; // 作为客户端发送数据
                 ioContext->addr = remoteServerAddr;
-                auto rtOfSend = WSASend(
-                        ioContext->socket,
-                        &ioContext->wsaBuf,
-                        1,
-                        &nBytes,  // 用不上
-                        dwFlags,
-                        &(ioContext->overlapped),
-                        nullptr);
 
-                auto errSend = WSAGetLastError();
-                if (SOCKET_ERROR == rtOfSend && errSend != WSAGetLastError()) {
-                    std::cerr << "err occur when send to remove server " << WSAGetLastError() << std::endl;
-                    // 返回信息发生错误
-                    closesocket(ioContext->socket);
-                    // buf 由 string 管理，不需要删除
-                    delete ioContext;
-                    ioContext = nullptr;
-                    continue;
-                }
-
-                puts("CCCCCCCCCCCCDAnlg");
+                auto rtOfSend = asySend(ioContext,
+                                        EventIOType::ClientIOWrite,
+                                        EventIOType::ClientIORead);
 
 
-                // 同时准备异步接收数据
-                auto newIoContext = new IOContext;
-                newIoContext->buffer = new CHAR[MaxBufferSize]{};
-                newIoContext->wsaBuf = {MaxBufferSize, newIoContext->buffer};
-
-                newIoContext->socket = ioContext->socket;
-                newIoContext->type = EventIOType::ClientIORead; // 代理服务器作为客户端时的读
-                newIoContext->addr = ioContext->addr;
-                newIoContext->altSocket = ioContext->altSocket; // 传3
-
-                auto rtOfReceive = WSARecv(
-                        newIoContext->socket,
-                        &newIoContext->wsaBuf,
-                        1,
-                        &nBytes, // 不使用
-                        &dwFlags, // 不使用
-                        &newIoContext->overlapped,
-                        nullptr);
-                auto errReceive = WSAGetLastError();
-                if (SOCKET_ERROR == rtOfReceive && ERROR_IO_PENDING != errReceive) {
-                    std::cerr << "err receive data from remote server :" << WSAGetLastError() << std::endl;
-                    // 发生不为 ERROR_IO_PENDING 的错误
-                    shutdown(newIoContext->socket, SD_BOTH);
-                    closesocket(newIoContext->socket);
-                    delete[] newIoContext->buffer;
-                    newIoContext->buffer = nullptr;
-                    delete newIoContext;
-                    newIoContext = nullptr;
-                }
+                assert(0 == rtOfSend);
 
 
-
-                // TODO: 结束
                 break;
             }
 
@@ -565,9 +416,6 @@ void ProxyServer::eventWorkerThread() {
                 ioContext = nullptr;
 
 
-
-
-
                 break;
 
             }
@@ -575,10 +423,6 @@ void ProxyServer::eventWorkerThread() {
             case EventIOType::ClientIORead: {
                 // 如果缓冲区满了
                 if (MaxBufferSize == lpNumberOfBytesTransferred) {
-
-                    puts("AAAAAAAAAGFQAGHAFDH");
-
-                    // 重新生成 IOContext
 
 
                     // 每次开辟内存 以 MaxBufferSize 为单位递增
@@ -598,24 +442,7 @@ void ProxyServer::eventWorkerThread() {
                     ++ioContext->seq;
 
 
-                    // 使用新的 IOContext 继续接收
-                    auto rtOfReceive = WSARecv(
-                            ioContext->socket,
-                            &ioContext->wsaBuf, // 数据放在这里
-                            1,
-                            &nBytes, // 接收到的数据长度,不过这里不修改重叠结构，通知的时候再修改
-                            &dwFlags,
-                            &ioContext->overlapped,
-                            nullptr);
-                    auto errReceive = WSAGetLastError();
-                    if (SOCKET_ERROR == rtOfReceive && ERROR_IO_PENDING != errReceive) {
-                        std::cerr << "err0 receive" << std::endl;
-                        // 发生不为 ERROR_IO_PENDING 的错误
-                        shutdown(ioContext->socket, SD_BOTH);
-                        closesocket(ioContext->socket);
-                        delete ioContext;
-                        ioContext = nullptr;
-                    }
+                    asyReceive(ioContext,ioContext->type);
 
                     // 跳过下面的逻辑
                     continue;
@@ -630,7 +457,7 @@ void ProxyServer::eventWorkerThread() {
                 originDataFromRemote.push_back('\0');
 
 
-                ioContext->sendToClient; // 经其他模块处理后的新数据
+                ioContext->sendToClient.clear();
                 commitData(originDataFromRemote,
                            0,
                            ioContext->addr.sin_addr,
@@ -648,42 +475,21 @@ void ProxyServer::eventWorkerThread() {
 
 
 
-
-
                 // 写回客户端
                 ioContext->socket = ioContext->altSocket;
                 delete[] ioContext->buffer;
                 ioContext->buffer =
-                        const_cast<CHAR*>(ioContext->sendToClient.c_str());
+                        const_cast<CHAR *>(ioContext->sendToClient.c_str());
 
                 ioContext->wsaBuf = {
                         static_cast<ULONG>(ioContext->sendToClient.length()),
                         ioContext->buffer
                 };
 
-                ioContext->type = EventIOType::ServerIOWrite; // 作为客户端发送数据
 
-
-                auto rtOfSend = WSASend(
-                        ioContext->socket,
-                        &ioContext->wsaBuf,
-                        1,
-                        &nBytes,  // 用不上
-                        dwFlags,
-                        &ioContext->overlapped,
-                        nullptr);
-
-                auto errSend = WSAGetLastError();
-                if (SOCKET_ERROR == rtOfSend && errSend != WSAGetLastError()) {
-                    std::cerr << "err occur when send to remove server " << WSAGetLastError() << std::endl;
-                    // 返回信息发生错误
-                    closesocket(ioContext->socket);
-                    // buf 由 string 管理，不需要删除
-                    ioContext->sendToClient.clear();
-                    delete ioContext;
-                    ioContext = nullptr;
-                    continue;
-                }
+                asySend(ioContext,
+                        EventIOType::ServerIOWrite,
+                        EventIOType::ServerIORead);
 
 
                 break;
@@ -693,6 +499,7 @@ void ProxyServer::eventWorkerThread() {
             case EventIOType::ServerIOWrite: {
                 // 善后
                 // buf 由 string 管理，不需要删除
+                ioContext->sendToClient.clear();
                 ioContext->sendToClient.clear();
                 delete ioContext;
                 ioContext = nullptr;
@@ -727,11 +534,11 @@ int ProxyServer::newAccept() {
     ioContext->type = EventIOType::ServerIOAccept;
     //提前准备好 clientSocketFD
     ioContext->socket = WSASocket(AF_INET,
-                                    SOCK_STREAM,
-                                    IPPROTO_TCP,
-                                    nullptr,
-                                    0,
-                                    WSA_FLAG_OVERLAPPED);
+                                  SOCK_STREAM,
+                                  IPPROTO_TCP,
+                                  nullptr,
+                                  0,
+                                  WSA_FLAG_OVERLAPPED);
 
 
 
@@ -740,7 +547,7 @@ int ProxyServer::newAccept() {
 
     // 切记，也要和iocp绑定，不然后续send recv事件没办法通知
     if (nullptr == CreateIoCompletionPort(
-            (HANDLE)ioContext->socket,
+            (HANDLE) ioContext->socket,
             hIOCP,
             0,
             0)) {
@@ -757,11 +564,9 @@ int ProxyServer::newAccept() {
     int bRetVal = AcceptEx(serverSocketFD, ioContext->socket, ioContext->addresses,
                            0, addrLen, addrLen,
                            nullptr, &ioContext->overlapped);
-    if (bRetVal == FALSE)
-    {
+    if (bRetVal == FALSE) {
         int error = WSAGetLastError();
-        if (error != WSA_IO_PENDING)
-        {
+        if (error != WSA_IO_PENDING) {
             std::cerr << WSAGetLastError() << std::endl;
             closesocket(ioContext->socket);
             return 0;
@@ -771,4 +576,128 @@ int ProxyServer::newAccept() {
     return 1;
 
 }
+
+
+int ProxyServer::asyReceive(_In_ IOContext *ioContext,
+                            _In_ EventIOType typeOfReceive) {
+    // 临时存值
+    DWORD dwFlags = 0;
+    DWORD nBytes = MaxBufferSize;
+
+    // 表示接收
+    ioContext->type = typeOfReceive;
+
+    auto rtOfReceive = WSARecv(
+            ioContext->socket,
+            &ioContext->wsaBuf,
+            1,
+            &nBytes, // 接收到的数据长度
+            &dwFlags,
+            &ioContext->overlapped,
+            nullptr);
+    auto errReceive = WSAGetLastError();
+    if (SOCKET_ERROR == rtOfReceive && ERROR_IO_PENDING != errReceive) {
+        std::cerr << "err occur when receiving data..."
+                  << WSAGetLastError()
+                  << std::endl;
+        // 发生不为 ERROR_IO_PENDING 的错误
+        shutdown(ioContext->socket, SD_BOTH);
+        closesocket(ioContext->socket);
+        delete[]ioContext->buffer;
+
+        delete ioContext;
+        ioContext = nullptr;
+        return -1;
+    }
+
+    return 0;
+
+
+}
+
+
+int ProxyServer::asySend(_In_ IOContext *ioContext,
+                         _In_ EventIOType typeOfSend,
+                         _In_ EventIOType typeOfReceive,
+                         _In_ int flag) {
+
+    // 临时存值
+    DWORD dwFlags = 0;
+    DWORD nBytes = MaxBufferSize;
+
+    // 发送类型
+    ioContext->type = typeOfSend;
+
+    auto rtOfSend = WSASend(
+            ioContext->socket,
+            &ioContext->wsaBuf,
+            1,
+            &nBytes,  // 用不上
+            dwFlags,
+            &(ioContext->overlapped),
+            nullptr);
+    auto errSend = WSAGetLastError();
+    if (SOCKET_ERROR == rtOfSend && errSend != WSAGetLastError()) {
+        std::cerr << "err occur when sending data... "
+                  << WSAGetLastError()
+                  << std::endl;
+        // 返回信息发生错误
+        closesocket(ioContext->socket);
+        ioContext->sendToClient.clear();
+        ioContext->sendToServer.clear();
+
+        // 缓冲区由string管理
+        delete ioContext;
+        ioContext = nullptr;
+        return -1;
+    }
+
+    // 是否仅发送
+    if (flag)return 0;
+
+    // 发送的同时已经可以准备接收了
+    auto newIOContext = new IOContext;
+    newIOContext->socket = ioContext->socket;
+    newIOContext->altSocket = ioContext->altSocket;
+    newIOContext->addr = ioContext->addr;
+    newIOContext->sendToClient = ioContext->sendToClient;
+    newIOContext->sendToServer = ioContext->sendToServer;
+    newIOContext->type = typeOfReceive;
+
+
+    newIOContext->buffer = new CHAR[MaxBufferSize]{};
+    newIOContext->wsaBuf = {
+            MaxBufferSize,
+            newIOContext->buffer
+    };
+
+    auto rtOfReceive = WSARecv(
+            newIOContext->socket,
+            &newIOContext->wsaBuf,
+            1,
+            &nBytes, // 接收到的数据长度
+            &dwFlags,
+            &newIOContext->overlapped,
+            nullptr);
+    auto errReceive = WSAGetLastError();
+    if (SOCKET_ERROR == rtOfReceive && ERROR_IO_PENDING != errReceive) {
+        std::cerr << "err occur when receiving data..."
+                  << WSAGetLastError()
+                  << std::endl;
+
+        // 发生不为 ERROR_IO_PENDING 的错误
+        shutdown(newIOContext->socket, SD_BOTH);
+        closesocket(newIOContext->socket);
+        delete[]newIOContext->buffer;
+
+        delete newIOContext;
+        newIOContext = nullptr;
+        return -2;
+    }
+
+
+    return 0;
+}
+
+
 

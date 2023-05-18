@@ -35,7 +35,7 @@ enum class EventIOType {
 // 用于重叠IO
 struct IOContext {
     OVERLAPPED overlapped{};
-    CHAR* buffer = nullptr; //[MaxBufferSize];// = new CHAR[MaxBufferSize];  // [MaxBufferSize]{};
+    CHAR *buffer = nullptr; //[MaxBufferSize];// = new CHAR[MaxBufferSize];  // [MaxBufferSize]{};
     WSABUF wsaBuf{MaxBufferSize, buffer}; // 后面赋值，这里只是说明相关性
     EventIOType type{};
     SOCKET socket = INVALID_SOCKET;
@@ -81,11 +81,11 @@ public:
 
     explicit ProxyServer(_In_ UINT proxyPort,
                          _In_ const std::function<int(
-                                 _In_ const std::string &,
-                                 _In_ const UINT32 &,
-                                 _In_ const in_addr &,
-                                 _In_ const bool &,
-                                 _Out_ std::string &)>& func);
+            _In_ const std::string &,
+            _In_ const UINT32 &,
+            _In_ const in_addr &,
+            _In_ const bool &,
+            _Out_ std::string &)> &func);
 
     ~ProxyServer();
 
@@ -99,11 +99,14 @@ public:
                      _In_ std::map<UINT, UINT32> *mapPortPID = nullptr);
 
 
-    /**
-     * 处理连接请求
-     * 此线程用于不断接收连接，并 Post 一次 Read 事件
-     */
-    void acceptWorkerThread();
+    static int asyReceive(_In_ IOContext *ioContext,
+                          _In_ EventIOType typeOfReceive);
+
+
+    static int asySend(_In_ IOContext *ioContext,
+                       _In_ EventIOType typeOfSend,
+                       _In_ EventIOType typeOfReceive,
+                       _In_ int flag = 0);
 
 
     /**
