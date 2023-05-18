@@ -162,14 +162,10 @@ void ProxyServer::startServer(_In_ int maxWaitList,
 
 
 
-    std::cout << newAccept() <<std::endl;
-    std::cout << newAccept() <<std::endl;
-    std::cout << newAccept() <<std::endl;
-    std::cout << newAccept() <<std::endl;
-    std::cout << newAccept() <<std::endl;
-    std::cout << newAccept() <<std::endl;
-    std::cout << newAccept() <<std::endl;
-    std::cout << newAccept() <<std::endl;
+
+    for (auto i = 0;i < 100;i++){
+        newAccept();
+    }
 
 /*    // 启动检测 accept 消息的线程
     acceptThread = std::thread([this]() { acceptWorkerThread(); });
