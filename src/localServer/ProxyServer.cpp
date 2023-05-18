@@ -751,8 +751,8 @@ int ProxyServer::newAccept() {
 
     //存放网络地址的长度
     int addrLen = sizeof(sockaddr_storage);
-    std::cout << " sizeof(sockaddr_in) =" << sizeof(sockaddr_in)<<std::endl;
-    std::cout << " sizeof(sockaddr_storage) =" << sizeof(sockaddr_storage)<<std::endl;
+/*    std::cout << " sizeof(sockaddr_in) =" << sizeof(sockaddr_in)<<std::endl;
+    std::cout << " sizeof(sockaddr_storage) =" << sizeof(sockaddr_storage)<<std::endl;*/
 
     int bRetVal = AcceptEx(serverSocketFD, ioContext->socket, ioContext->addresses,
                            0, addrLen, addrLen,
