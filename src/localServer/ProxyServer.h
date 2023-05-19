@@ -19,7 +19,7 @@
 
 #define ALT_PORT 43010
 constexpr static size_t MaxBufferSize = 1024 * 4; // 1024 * 1; // 最大缓冲区尺寸
-constexpr static size_t NumberOfThreads = 100; // 线程池线程数量
+constexpr static size_t NumberOfThreads = 1; // 线程池线程数量
 
 
 // 用于标识IO事件的类型，不与宏定义冲突
@@ -42,7 +42,7 @@ struct IOContext {
     DWORD nBytes = 0;
     sockaddr_in addr{}; // 保存拆解好的地址
     sockaddr_storage addresses[2]{}; // 保存本地地址和远程地址，第二个是 remote
-    SOCKET altSocket = INVALID_SOCKET; // 过渡使用的，传递最开始的 accept 后的socket
+    SOCKET remoteSocket = INVALID_SOCKET; // 过渡使用的，传递最开始的 accept 后的socket
     std::string sendToClient; // 要回复给客户端的数据
     std::string sendToServer; // 要发给远程服务器的数据
     UINT16 seq = 1; // seq:6 = 1;
@@ -100,10 +100,12 @@ public:
 
 
     static int asyReceive(_In_ IOContext *ioContext,
+                          _In_ const SOCKET& socket,
                           _In_ EventIOType typeOfReceive);
 
 
     static int asySend(_In_ IOContext *ioContext,
+                       _In_ const SOCKET& socket,
                        _In_ EventIOType typeOfSend,
                        _In_ EventIOType typeOfReceive,
                        _In_ int flag = 0);
