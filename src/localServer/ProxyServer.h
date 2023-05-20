@@ -28,21 +28,22 @@ enum class EventIOType {
     ServerIOWrite,
     ClientIORead, // 代理服务器作为客户端时的 IO 读
     ClientIOWrite,
-    ServerIOAccept // 代理服务器接收到的连接请求
+    ServerIOAccept, // 代理服务器接收到的连接请求
+    ClientIOConnect
 };
 
 
 // 用于重叠IO
 struct IOContext {
     OVERLAPPED overlapped{};
-    CHAR* buffer = nullptr; //[MaxBufferSize];// = new CHAR[MaxBufferSize];  // [MaxBufferSize]{};
+    CHAR *buffer = nullptr; //[MaxBufferSize];// = new CHAR[MaxBufferSize];  // [MaxBufferSize]{};
     WSABUF wsaBuf{MaxBufferSize, buffer}; // 后面赋值，这里只是说明相关性
     EventIOType type{};
     SOCKET socket = INVALID_SOCKET;
     DWORD nBytes = 0;
     sockaddr_in addr{}; // 保存拆解好的地址
     sockaddr_storage addresses[2]{}; // 保存本地地址和远程地址，第二个是 remote
-    SOCKET altSocket = INVALID_SOCKET; // 过渡使用的，传递最开始的 accept 后的socket
+    SOCKET remoteSocket = INVALID_SOCKET; // 过渡使用的，传递最开始的 accept 后的socket
     std::string sendToClient; // 要回复给客户端的数据
     std::string sendToServer; // 要发给远程服务器的数据
     UINT16 seq = 1; // seq:6 = 1;
@@ -53,6 +54,8 @@ struct IOContext {
 
 class ProxyServer {
 private:
+
+    LPFN_CONNECTEX pfn_ConnectEx = nullptr;
 
     // 代理服务器
     SOCKET serverSocketFD = INVALID_SOCKET; // 高性能服务器的文件描述符
@@ -81,11 +84,11 @@ public:
 
     explicit ProxyServer(_In_ UINT proxyPort,
                          _In_ const std::function<int(
-                                 _In_ const std::string &,
-                                 _In_ const UINT32 &,
-                                 _In_ const in_addr &,
-                                 _In_ const bool &,
-                                 _Out_ std::string &)>& func);
+            _In_ const std::string &,
+            _In_ const UINT32 &,
+            _In_ const in_addr &,
+            _In_ const bool &,
+            _Out_ std::string &)> &func);
 
     ~ProxyServer();
 
@@ -99,11 +102,14 @@ public:
                      _In_ std::map<UINT, UINT32> *mapPortPID = nullptr);
 
 
-    /**
-     * 处理连接请求
-     * 此线程用于不断接收连接，并 Post 一次 Read 事件
-     */
-    void acceptWorkerThread();
+    inline static int asyReceive(_In_ IOContext *ioContext,
+                          _In_ const SOCKET &socket,
+                          _In_ const EventIOType &typeOfReceive);
+
+
+    inline static int asySend(_In_ IOContext *ioContext,
+                       _In_ const SOCKET &socket,
+                       _In_ const EventIOType &typeOfSend);
 
 
     /**
@@ -115,7 +121,7 @@ public:
     /**
      * 创建一个新的异步accept
      */
-    int newAccept();
+    inline int newAccept();
 
 private:
     /**
@@ -127,7 +133,7 @@ private:
      * @param newData 其他模块修改后的新数据
      * @return 错误码
      */
-    int commitData(_In_ const std::string &originData,
+    inline int commitData(_In_ const std::string &originData,
                    _In_ const UINT32 &pid,
                    _In_ const in_addr &serverAddr,
                    _In_ const bool &isOutBound,
