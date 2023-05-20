@@ -19,7 +19,7 @@
 
 #define ALT_PORT 43010
 constexpr static size_t MaxBufferSize = 1024 * 4; // 1024 * 1; // 最大缓冲区尺寸
-constexpr static size_t NumberOfThreads = 1; // 线程池线程数量
+constexpr static size_t NumberOfThreads = 100; // 线程池线程数量
 
 
 // 用于标识IO事件的类型，不与宏定义冲突
@@ -28,7 +28,8 @@ enum class EventIOType {
     ServerIOWrite,
     ClientIORead, // 代理服务器作为客户端时的 IO 读
     ClientIOWrite,
-    ServerIOAccept // 代理服务器接收到的连接请求
+    ServerIOAccept, // 代理服务器接收到的连接请求
+    ClientIOConnect
 };
 
 
@@ -53,6 +54,8 @@ struct IOContext {
 
 class ProxyServer {
 private:
+
+    LPFN_CONNECTEX pfn_ConnectEx = nullptr;
 
     // 代理服务器
     SOCKET serverSocketFD = INVALID_SOCKET; // 高性能服务器的文件描述符
@@ -99,16 +102,14 @@ public:
                      _In_ std::map<UINT, UINT32> *mapPortPID = nullptr);
 
 
-    static int asyReceive(_In_ IOContext *ioContext,
-                          _In_ const SOCKET& socket,
-                          _In_ EventIOType typeOfReceive);
+    inline static int asyReceive(_In_ IOContext *ioContext,
+                          _In_ const SOCKET &socket,
+                          _In_ const EventIOType &typeOfReceive);
 
 
-    static int asySend(_In_ IOContext *ioContext,
-                       _In_ const SOCKET& socket,
-                       _In_ EventIOType typeOfSend,
-                       _In_ EventIOType typeOfReceive,
-                       _In_ int flag = 0);
+    inline static int asySend(_In_ IOContext *ioContext,
+                       _In_ const SOCKET &socket,
+                       _In_ const EventIOType &typeOfSend);
 
 
     /**
@@ -120,7 +121,7 @@ public:
     /**
      * 创建一个新的异步accept
      */
-    int newAccept();
+    inline int newAccept();
 
 private:
     /**
@@ -132,7 +133,7 @@ private:
      * @param newData 其他模块修改后的新数据
      * @return 错误码
      */
-    int commitData(_In_ const std::string &originData,
+    inline int commitData(_In_ const std::string &originData,
                    _In_ const UINT32 &pid,
                    _In_ const in_addr &serverAddr,
                    _In_ const bool &isOutBound,
