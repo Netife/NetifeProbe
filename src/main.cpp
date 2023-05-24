@@ -4,7 +4,7 @@
 
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/create_channel.h>
-#include "../gRpcServices/NetifePostClientImpl.h"
+#include "gRpcServices/NetifePostClientImpl.h"
 
 #include "Poco/UUID.h"
 #include "Poco/UUIDGenerator.h"

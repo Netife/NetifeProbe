@@ -23,12 +23,12 @@ link_directories(./lib)
 add_executable(NetifeProbe src/main.cpp
         src/divert/PacketDivert.h src/divert/PacketDivert.cpp
         src/HttpServer/ProxyServer.h src/HttpServer/ProxyServer.cpp
-        gRpcServices/NetifePostClientImpl.h
-        gRpcServices/NetifePostClientImpl.cpp
-        gRpcModel/NetifeMessage.pb.h
-        gRpcModel/NetifeMessage.grpc.pb.h
-        gRpcModel/NetifeMessage.pb.cc
-        gRpcModel/NetifeMessage.grpc.pb.cc src/ServerInterface.h src/HttpsServer/SSLProxyServer.cpp src/HttpsServer/SSLProxyServer.h)
+        src/gRpcServices/NetifePostClientImpl.h
+        src/gRpcServices/NetifePostClientImpl.cpp
+        src/gRpcModel/NetifeMessage.pb.h
+        src/gRpcModel/NetifeMessage.grpc.pb.h
+        src/gRpcModel/NetifeMessage.pb.cc
+        src/gRpcModel/NetifeMessage.grpc.pb.cc src/ServerInterface.h src/HttpsServer/SSLProxyServer.cpp src/HttpsServer/SSLProxyServer.h)
 
 # gRpc
 target_link_libraries(NetifeProbe PRIVATE
