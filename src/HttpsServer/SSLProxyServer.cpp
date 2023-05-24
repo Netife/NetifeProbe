@@ -32,12 +32,12 @@ SSLProxyServer::SSLProxyServer(_In_ UINT proxyPort,
 
     const SSL_METHOD *method = SSLv23_server_method();
     serverSSLCtx = SSL_CTX_new(method);
-    //if (SSL_CTX_use_certificate_file(serverSSLCtx, "cache\\www.epicmo.cn.crt", SSL_FILETYPE_PEM) <= 0) {
+    //if (SSL_CTX_use_certificate_file(serverSSLCtx, "cache\\www.baidu.com.crt", SSL_FILETYPE_PEM) <= 0) {
     //	ERR_print_errors_fp(stderr);
     //	exit(EXIT_FAILURE);
     //}
 
-    //if (SSL_CTX_use_PrivateKey_file(serverSSLCtx, "cache\\www.epicmo.cn.key", SSL_FILETYPE_PEM) <= 0) {
+    //if (SSL_CTX_use_PrivateKey_file(serverSSLCtx, "cache\\www.baidu.com.key", SSL_FILETYPE_PEM) <= 0) {
     //	ERR_print_errors_fp(stderr);
     //	exit(EXIT_FAILURE);
     //}
@@ -632,6 +632,7 @@ int SSLProxyServer::clientHelloSelectServerCTX(SSL *ssl,
         certMtx.unlock();
         SSL_use_certificate_file(ssl, certFilePath.c_str(), SSL_FILETYPE_PEM);
         auto m = SSL_use_PrivateKey_file(ssl, keyFilePath.c_str(), SSL_FILETYPE_PEM);
+        assert(m == 1);
         return 1;
 
     }
@@ -643,22 +644,23 @@ int SSLProxyServer::clientHelloSelectServerCTX(SSL *ssl,
 bool SSLProxyServer::checkIfCertFileExists(const std::string &filePath) {
     {
         //std::lock_guard<std::mutex> lg(mtx);
-        std::filesystem::directory_iterator files("cache");
-        if (!files->exists()) {
+        std::filesystem::path dir("cache"); // 该文件创建在 构建后的 DEBUG 目录中
+        if (!std::filesystem::exists("cache")) {
             std::filesystem::create_directory("cache");
             return false;
         }
-/*        for (auto& file : files) {
+
+        std::filesystem::directory_iterator files("cache");
+        for (auto& file : files) {
             if (file.path() == filePath)return true;
         }
         return false;
-        */
 
         // 相当于上面的判断
-        return std::any_of(begin(files), end(files),
-                           [&filePath](auto &file) {
-                               return file.path() == filePath;
-                           });
+//        return std::any_of(begin(files), end(files),
+//                           [&filePath](auto &file) {
+//                               return file.path() == filePath;
+//                           });
 
     }
 }

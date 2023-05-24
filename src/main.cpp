@@ -8,6 +8,7 @@
 #include "Poco/UUID.h"
 #include "Poco/UUIDGenerator.h"
 
+#include <filesystem>
 
 using namespace std;
 using Poco::UUID;
@@ -34,17 +35,30 @@ static map<UINT, UINT32> mapPortPID;
 int main() {
 
 
+//    ::system("chcp 65001");
+//    std::filesystem::path dir("cache");
+//    error_code buf{};
+//    std::cout << absolute(dir, buf) << std::endl;
+//    std::cout << buf.message() << std::endl;
+//    if (!std::filesystem::exists("cache")) {
+//        auto m = std::filesystem::create_directory("cache");
+//        std::cout << m << std::endl;
+//        exit(-1);
+//    }
+
     // grpc
-    Netife::NetifePostClientImpl client(grpc::CreateChannel(static_cast<string>(DEBUG_DISPATCHER_HOST)  + ":" + DEBUG_DISPATCHER_PORT, grpc::InsecureChannelCredentials()));
+    Netife::NetifePostClientImpl client(
+            grpc::CreateChannel(static_cast<string>(DEBUG_DISPATCHER_HOST) + ":" + DEBUG_DISPATCHER_PORT,
+                                grpc::InsecureChannelCredentials()));
 
     auto commitDataFunc = [&client](
             _In_ const std::string &originData,
             _In_ const UINT32 pid,
             _In_ const struct in_addr &serverAddr,
-            _In_ const bool& isOutBound,
-            _In_ const bool& isSSL,
+            _In_ const bool &isOutBound,
+            _In_ const bool &isSSL,
             _Out_ std::string &newData
-    ) ->int{
+    ) -> int {
 
 
         newData = originData;
@@ -56,7 +70,7 @@ int main() {
 
         NetifeProbeRequest netifeProbeRequest;
 
-        UUIDGenerator& generator = UUIDGenerator::defaultGenerator();
+        UUIDGenerator &generator = UUIDGenerator::defaultGenerator();
         Poco::UUID uuid(generator.create());
 
         netifeProbeRequest.set_uuid(uuid.toString());
@@ -77,9 +91,9 @@ int main() {
 
         //TODO 支持SERVER修改
 
-        if (isOutBound){
+        if (isOutBound) {
             netifeProbeRequest.set_application_type(NetifeMessage::NetifeProbeRequest_ApplicationType_CLIENT);
-        }else{
+        } else {
             netifeProbeRequest.set_application_type(NetifeMessage::NetifeProbeRequest_ApplicationType_SERVER);
         }
 
@@ -105,75 +119,70 @@ int main() {
 
     UINT16 serverPort = SERVER_PORT, proxyPort = PROXY_PORT, altPort = ALT_PORT;
 
-    UINT16 sslServerPort = SSL_SERVER_PORT,sslProxyPort = SSL_PROXY_PORT,sslAltPort = SSL_ALT_PORT;
+    UINT16 sslServerPort = SSL_SERVER_PORT, sslProxyPort = SSL_PROXY_PORT, sslAltPort = SSL_ALT_PORT;
     auto dealFunc =
             [&](PWINDIVERT_IPHDR &ipHeader, PWINDIVERT_TCPHDR &tcpHeader, WINDIVERT_ADDRESS &addr) {
-        if (addr.Outbound) // 向外部主机发送的数据包
-        {
-            if (tcpHeader->DstPort == htons(serverPort)) {
-                // Reflect: PORT ---> PROXY
+                if (addr.Outbound) // 向外部主机发送的数据包
+                {
+                    if (tcpHeader->DstPort == htons(serverPort)) {
+                        // Reflect: PORT ---> PROXY
 
-                tcpHeader->DstPort = htons(proxyPort);
-                swap(ipHeader->SrcAddr, ipHeader->DstAddr);
+                        tcpHeader->DstPort = htons(proxyPort);
+                        swap(ipHeader->SrcAddr, ipHeader->DstAddr);
 //                ipHeader->DstAddr = ipHeader->SrcAddr;
-                addr.Outbound = FALSE;
+                        addr.Outbound = FALSE;
 
-            } else if (tcpHeader->SrcPort == htons(proxyPort)) {
-                // Reflect: PROXY ---> PORT
+                    } else if (tcpHeader->SrcPort == htons(proxyPort)) {
+                        // Reflect: PROXY ---> PORT
 
-                tcpHeader->SrcPort = htons(serverPort);
-                swap(ipHeader->SrcAddr, ipHeader->DstAddr);
-                addr.Outbound = FALSE;
-            } else if (tcpHeader->DstPort == htons(altPort)) {
-                // Redirect: ALT ---> PORT
+                        tcpHeader->SrcPort = htons(serverPort);
+                        swap(ipHeader->SrcAddr, ipHeader->DstAddr);
+                        addr.Outbound = FALSE;
+                    } else if (tcpHeader->DstPort == htons(altPort)) {
+                        // Redirect: ALT ---> PORT
 
-                tcpHeader->DstPort = htons(serverPort);
-            }
-
-
+                        tcpHeader->DstPort = htons(serverPort);
+                    }
 
 
-            if(0)
-            if (tcpHeader->DstPort == htons(sslServerPort)) {
-                // Reflect: PORT ---> PROXY
+                    if (0)
+                        if (tcpHeader->DstPort == htons(sslServerPort)) {
+                            // Reflect: PORT ---> PROXY
 
-                tcpHeader->DstPort = htons(sslProxyPort);
-                swap(ipHeader->SrcAddr, ipHeader->DstAddr);
+                            tcpHeader->DstPort = htons(sslProxyPort);
+                            swap(ipHeader->SrcAddr, ipHeader->DstAddr);
 //                ipHeader->DstAddr = ipHeader->SrcAddr;
-                addr.Outbound = FALSE;
+                            addr.Outbound = FALSE;
 
-            } else if (tcpHeader->SrcPort == htons(sslProxyPort)) {
-                // Reflect: PROXY ---> PORT
+                        } else if (tcpHeader->SrcPort == htons(sslProxyPort)) {
+                            // Reflect: PROXY ---> PORT
 
-                tcpHeader->SrcPort = htons(sslServerPort);
-                swap(ipHeader->SrcAddr, ipHeader->DstAddr);
-                addr.Outbound = FALSE;
-            } else if (tcpHeader->DstPort == htons(sslAltPort)) {
-                // Redirect: ALT ---> PORT
+                            tcpHeader->SrcPort = htons(sslServerPort);
+                            swap(ipHeader->SrcAddr, ipHeader->DstAddr);
+                            addr.Outbound = FALSE;
+                        } else if (tcpHeader->DstPort == htons(sslAltPort)) {
+                            // Redirect: ALT ---> PORT
 
-                tcpHeader->DstPort = htons(sslServerPort);
-            }
-
-
+                            tcpHeader->DstPort = htons(sslServerPort);
+                        }
 
 
+                } else {
+                    if (tcpHeader->SrcPort == htons(serverPort)) {
+                        // Redirect: PORT ---> ALT
 
-        } else {
-            if (tcpHeader->SrcPort == htons(serverPort)) {
-                // Redirect: PORT ---> ALT
-
-                tcpHeader->SrcPort = htons(altPort);
-            }
+                        tcpHeader->SrcPort = htons(altPort);
+                    }
 
 
-            if(0)
-            if (tcpHeader->SrcPort == htons(sslServerPort)) {
-                // Redirect: PORT ---> ALT
+                    if (0)
+                        if (tcpHeader->SrcPort == htons(sslServerPort)) {
+                            // Redirect: PORT ---> ALT
 
-                tcpHeader->SrcPort = htons(sslAltPort);
-            }
-        }
-    };
+                            tcpHeader->SrcPort = htons(sslAltPort);
+                        }
+                }
+            };
 
 
 
@@ -184,7 +193,7 @@ int main() {
 
 
     char filter[256]{};
-    snprintf(filter,sizeof(filter),
+    snprintf(filter, sizeof(filter),
              "tcp and "
              "(tcp.DstPort != 7890 and tcp.DstPort != 7891 and tcp.DstPort != 7892 and tcp.DstPort != 7893 and "
              "tcp.SrcPort != 7890 and tcp.SrcPort != 7891 and tcp.SrcPort != 7892 and tcp.SrcPort != 7893)");
@@ -198,7 +207,7 @@ int main() {
 
 
 
-    ProxyServer proxyServer(proxyPort,commitDataFunc);
+    ProxyServer proxyServer(proxyPort, commitDataFunc);
     PacketDivert packetDivert(filter);
     PacketDivert sniffDivert("tcp and localPort", WINDIVERT_LAYER_FLOW,
                              WINDIVERT_FLAG_SNIFF | WINDIVERT_FLAG_RECV_ONLY);
