@@ -22,7 +22,7 @@
 #define SSL_ALT_PORT 34010
 
 constexpr static size_t MaxBufferSize = 1024 * 4; // 1024 * 1; // 最大缓冲区尺寸
-constexpr static size_t NumberOfThreads = 50; // 线程池线程数量
+constexpr static size_t NumberOfThreads = 100; // 线程池线程数量
 
 
 
@@ -57,12 +57,15 @@ struct IOContext {
 
 class ServerInterface {
 public:
+    virtual void startServer(_In_ int maxWaitList,
+                             _In_ std::map<UINT, UINT32> *mapPortPID) = 0;
+
+private:
     virtual inline int newAccept() = 0;
 
     virtual inline int newConnect(_In_ IOContext* ioContext) = 0;
 
-    virtual void startServer(_In_ int maxWaitList,
-                             _In_ std::map<UINT, UINT32> *mapPortPID) = 0;
+
 
     virtual inline int commitData(_In_ const std::string &originData,
                                   _In_ const UINT32 &pid,

@@ -28,7 +28,8 @@ void PacketDivert::startDivert(
         const std::function<void(
                 PWINDIVERT_IPHDR &,
                 PWINDIVERT_TCPHDR &,
-                WINDIVERT_ADDRESS &)> &dealFunc)
+                WINDIVERT_ADDRESS &)> &dealFunc,
+                INT16 priority)
 {
 
 	if (0 != modeFlag)
@@ -37,7 +38,7 @@ void PacketDivert::startDivert(
 		return;
 	}
 
-	handle = WinDivertOpen(packetFilter, filterLayer, 121 /* 优先级 */, modeFlag);
+	handle = WinDivertOpen(packetFilter, filterLayer, priority /* 优先级 */, modeFlag);
 	if (handle == INVALID_HANDLE_VALUE)
 	{
 		const char *err_str;

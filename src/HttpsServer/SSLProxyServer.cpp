@@ -64,7 +64,7 @@ SSLProxyServer::SSLProxyServer(_In_ UINT proxyPort,
     sockaddr_in serverAddr{};
     serverAddr.sin_addr.s_addr = INADDR_ANY;
     serverAddr.sin_family = AF_INET;
-    serverAddr.sin_port = htons(8888);
+    serverAddr.sin_port = htons(proxyPort);
 
     ::bind(serverSocketFD, (sockaddr *) &serverAddr, sizeof(sockaddr_in));
 
@@ -101,13 +101,16 @@ int SSLProxyServer::newAccept() {
 
     //存放网络地址的长度
     int addrLen = sizeof(sockaddr_storage);
-    std::cout << " sizeof(sockaddr_in) =" << sizeof(sockaddr_in) << std::endl;
-    std::cout << " sizeof(sockaddr_storage) =" << sizeof(sockaddr_storage) << std::endl;
 
 
-    int bRetVal = AcceptEx(serverSocketFD, ioContext->socket, ioContext->addresses,
-                           0, addrLen, addrLen,
-                           nullptr, &ioContext->overlapped);
+    int bRetVal = AcceptEx(serverSocketFD,
+                           ioContext->socket,
+                           ioContext->addresses,
+                           0,
+                           addrLen,
+                           addrLen,
+                           nullptr,
+                           &ioContext->overlapped);
     if (bRetVal == FALSE) {
         int error = WSAGetLastError();
         if (error != WSA_IO_PENDING) {
@@ -263,6 +266,57 @@ int SSLProxyServer::newConnect(_In_ IOContext *ioContext) {
 void SSLProxyServer::startServer(_In_ int maxWaitList,
                                  _In_ std::map<UINT, UINT32> *mapPortPID) {
 
+    if (SOCKET_ERROR == ::listen(
+            serverSocketFD,
+            SOMAXCONN)) {
+        std::cerr << "failed to listen socket: " << WSAGetLastError() << std::endl;
+        closesocket(serverSocketFD);
+        exit(-5);
+    }
+
+
+    // 初始化 IOCP
+    hIOCP = CreateIoCompletionPort(INVALID_HANDLE_VALUE,
+                                   nullptr,
+                                   0,
+                                   NumberOfThreads);
+    if (INVALID_HANDLE_VALUE == hIOCP) {
+        std::cerr << "FAILED TO CREATE IOCP HANDLE:" << WSAGetLastError() << std::endl;
+        closesocket(serverSocketFD);
+        exit(-6);
+    }
+
+
+    // 切记，先把serverSockerFD和iocp绑定，不然接收不到连接通知
+    if (nullptr == CreateIoCompletionPort(
+            (HANDLE)serverSocketFD,
+            hIOCP,
+            0,
+            0)) {
+        shutdown(serverSocketFD, SD_BOTH);
+        closesocket(serverSocketFD);
+        exit(-13);
+    }
+
+
+    // 初始化工作线程
+    for (size_t i = 0; i < NumberOfThreads; i++) {
+        threadGroup.emplace_back([this]() { eventWorkerThread(); });
+    }
+
+
+    // 启动工作线程
+    for (auto& t : threadGroup) {
+        t.detach();
+    }
+
+
+    for (auto i = 0; i < 1; i++) {
+        newAccept();
+
+    }
+
+
 }
 
 int SSLProxyServer::commitData(_In_ const std::string &originData,
@@ -280,6 +334,7 @@ int SSLProxyServer::commitData(_In_ const std::string &originData,
 }
 
 void SSLProxyServer::eventWorkerThread() {
+    puts("worker");
     SSLIOContext *ioContext = nullptr;
     DWORD lpNumberOfBytesTransferred = 0;
     void *lpCompletionKey = nullptr;
@@ -596,7 +651,7 @@ int SSLProxyServer::clientHelloSelectServerCTX(SSL *ssl,
         serverHostname.append(servername);
     }
     if (serverHostname.length() > 0) {
-        SSL_CTX *new_ctx = static_cast<SSL_CTX *>(arg);
+        auto *new_ctx = static_cast<SSL_CTX *>(arg);
         SSL_set_SSL_CTX(ssl, new_ctx);
         SSL_set_options(ssl, SSL_CTX_get_options(new_ctx));
         // 根据得到的域名来重新生成证书并指定路径

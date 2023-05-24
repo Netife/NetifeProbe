@@ -44,16 +44,21 @@ public:
             _In_ const bool &,
             _Out_ std::string &)> &func);
 
+    /**
+ * 启动代理服务器
+ * @param maxWaitList 最大请求队列
+ * @param mapPortPID 用于传输pid的map
+ */
+    void startServer(_In_ int maxWaitList,
+                     _In_ std::map<UINT, UINT32> *mapPortPID) override;
+
+
     ~ProxyServer();
 
 
-    /**
-     * 启动代理服务器
-     * @param maxWaitList 最大请求队列
-     * @param mapPortPID 用于传输pid的map
-     */
-    void startServer(_In_ int maxWaitList,
-                     _In_ std::map<UINT, UINT32> *mapPortPID) override;
+
+private:
+
 
 
     inline static int asyReceive(_In_ IOContext *ioContext,

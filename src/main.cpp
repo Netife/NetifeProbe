@@ -1,5 +1,6 @@
 #include "HttpServer/ProxyServer.h"
 #include "divert/PacketDivert.h"
+#include "HttpsServer/SSLProxyServer.h"
 
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/create_channel.h>
@@ -118,8 +119,6 @@ int main() {
 
 
     UINT16 serverPort = SERVER_PORT, proxyPort = PROXY_PORT, altPort = ALT_PORT;
-
-    UINT16 sslServerPort = SSL_SERVER_PORT, sslProxyPort = SSL_PROXY_PORT, sslAltPort = SSL_ALT_PORT;
     auto dealFunc =
             [&](PWINDIVERT_IPHDR &ipHeader, PWINDIVERT_TCPHDR &tcpHeader, WINDIVERT_ADDRESS &addr) {
                 if (addr.Outbound) // 向外部主机发送的数据包
@@ -144,29 +143,6 @@ int main() {
                         tcpHeader->DstPort = htons(serverPort);
                     }
 
-
-                    if (0)
-                        if (tcpHeader->DstPort == htons(sslServerPort)) {
-                            // Reflect: PORT ---> PROXY
-
-                            tcpHeader->DstPort = htons(sslProxyPort);
-                            swap(ipHeader->SrcAddr, ipHeader->DstAddr);
-//                ipHeader->DstAddr = ipHeader->SrcAddr;
-                            addr.Outbound = FALSE;
-
-                        } else if (tcpHeader->SrcPort == htons(sslProxyPort)) {
-                            // Reflect: PROXY ---> PORT
-
-                            tcpHeader->SrcPort = htons(sslServerPort);
-                            swap(ipHeader->SrcAddr, ipHeader->DstAddr);
-                            addr.Outbound = FALSE;
-                        } else if (tcpHeader->DstPort == htons(sslAltPort)) {
-                            // Redirect: ALT ---> PORT
-
-                            tcpHeader->DstPort = htons(sslServerPort);
-                        }
-
-
                 } else {
                     if (tcpHeader->SrcPort == htons(serverPort)) {
                         // Redirect: PORT ---> ALT
@@ -175,13 +151,44 @@ int main() {
                     }
 
 
-                    if (0)
-                        if (tcpHeader->SrcPort == htons(sslServerPort)) {
-                            // Redirect: PORT ---> ALT
-
-                            tcpHeader->SrcPort = htons(sslAltPort);
-                        }
                 }
+            };
+
+
+    UINT16 sslServerPort = SSL_SERVER_PORT, sslProxyPort = SSL_PROXY_PORT, sslAltPort = SSL_ALT_PORT;
+    auto sslDealFunc =
+            [&](PWINDIVERT_IPHDR &ipHeader, PWINDIVERT_TCPHDR &tcpHeader, WINDIVERT_ADDRESS &addr) {
+
+                if (addr.Outbound) // 向外部主机发送的数据包
+                {
+                    if (tcpHeader->DstPort == htons(sslServerPort)) {
+                        // Reflect: PORT ---> PROXY
+
+                        tcpHeader->DstPort = htons(sslProxyPort);
+                        swap(ipHeader->SrcAddr, ipHeader->DstAddr);
+                        addr.Outbound = FALSE;
+
+                    } else if (tcpHeader->SrcPort == htons(sslProxyPort)) {
+                        // Reflect: PROXY ---> PORT
+
+                        tcpHeader->SrcPort = htons(sslServerPort);
+                        swap(ipHeader->SrcAddr, ipHeader->DstAddr);
+                        addr.Outbound = FALSE;
+                    } else if (tcpHeader->DstPort == htons(sslAltPort)) {
+                        // Redirect: ALT ---> PORT
+
+                        tcpHeader->DstPort = htons(sslServerPort);
+                    }
+
+
+                } else {
+                    if (tcpHeader->SrcPort == htons(sslServerPort)) {
+                        // Redirect: PORT ---> ALT
+
+                        tcpHeader->SrcPort = htons(sslAltPort);
+                    }
+                }
+
             };
 
 
@@ -192,11 +199,26 @@ int main() {
     //TODO 这个地方需要修改！为了不侵入本REPO程序故没有修改启动逻辑
 
 
-    char filter[256]{};
+    char filter[512]{};
     snprintf(filter, sizeof(filter),
              "tcp and "
              "(tcp.DstPort != 7890 and tcp.DstPort != 7891 and tcp.DstPort != 7892 and tcp.DstPort != 7893 and "
-             "tcp.SrcPort != 7890 and tcp.SrcPort != 7891 and tcp.SrcPort != 7892 and tcp.SrcPort != 7893)");
+             "tcp.SrcPort != 7890 and tcp.SrcPort != 7891 and tcp.SrcPort != 7892 and tcp.SrcPort != 7893) and "
+             "(tcp.SrcPort == %d or tcp.DstPort == %d or "
+             "tcp.SrcPort == %d or tcp.DstPort == %d or "
+             "tcp.SrcPort == %d or tcp.DstPort == %d)",
+             serverPort, serverPort, proxyPort, proxyPort, altPort, altPort);
+
+
+    char sslFilter[512]{};
+    snprintf(sslFilter, sizeof(sslFilter),
+             "tcp and "
+             "(tcp.DstPort != 7890 and tcp.DstPort != 7891 and tcp.DstPort != 7892 and tcp.DstPort != 7893 and "
+             "tcp.SrcPort != 7890 and tcp.SrcPort != 7891 and tcp.SrcPort != 7892 and tcp.SrcPort != 7893) and "
+             "(tcp.SrcPort == %d or tcp.DstPort == %d or "
+             "tcp.SrcPort == %d or tcp.DstPort == %d or "
+             "tcp.SrcPort == %d or tcp.DstPort == %d)",
+             sslServerPort, sslServerPort, sslProxyPort, sslProxyPort, sslAltPort, sslAltPort);
 
 
 /*    snprintf(filter, sizeof(filter),
@@ -207,31 +229,43 @@ int main() {
 
 
 
+
+
+//    sslServer::SSLProxyServer sslProxyServer(sslProxyPort, commitDataFunc);
+
     ProxyServer proxyServer(proxyPort, commitDataFunc);
     PacketDivert packetDivert(filter);
-    PacketDivert sniffDivert("tcp and localPort", WINDIVERT_LAYER_FLOW,
-                             WINDIVERT_FLAG_SNIFF | WINDIVERT_FLAG_RECV_ONLY);
+//    PacketDivert sslPacketDivert(sslFilter);
+//    PacketDivert sniffDivert("tcp and localPort", WINDIVERT_LAYER_FLOW,
+//                             WINDIVERT_FLAG_SNIFF | WINDIVERT_FLAG_RECV_ONLY);
 
     bool one = false;
     bool two = false;
     bool three = false;
+    bool four = false;
     thread([&]() -> void {
         proxyServer.startServer(256, &mapPortPID); // TODO 魔法值
         one = true;
     }).detach();
 
     thread([&]() -> void {
-        packetDivert.startDivert(dealFunc);
+        packetDivert.startDivert(dealFunc,121);
         two = true;
     }).detach();
 
-//	thread([&]()->void {
-//        // new 的写法似乎存在内存泄漏问题，使用智能指针要解决生命周期问题，还是先创建对象吧
+    thread([&]() -> void {
+        // new 的写法似乎存在内存泄漏问题，使用智能指针要解决生命周期问题，还是先创建对象吧
 //		sniffDivert.startDivert([](WINDIVERT_ADDRESS) {},&mapPortPID);
-//		three = true;
+//        sslProxyServer.startServer(256, &mapPortPID);
+        three = true;
+    }).detach();
+
+//    thread([&]()->void{
+//        sslPacketDivert.startDivert(sslDealFunc,300);
+//        four = true;
 //    }).detach();
 
-    while (one == false || two == false || three == false) {
+    while (one == false || two == false || three == false || four == false) {
 
 //		for (auto elem : mapPortPID)
 //		{

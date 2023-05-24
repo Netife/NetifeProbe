@@ -92,6 +92,15 @@ namespace sslServer {
                 _Out_ std::string &)> &func);
 
 
+
+        void startServer(_In_ int maxWaitList,
+                         _In_ std::map<UINT, UINT32> *mapPortPID) override;
+
+
+
+
+
+    private:
         inline static bool checkIfCertFileExists(const std::string &filePath);
 
         int static clientHelloSelectServerCTX(_In_ SSL *ssl,
@@ -103,8 +112,7 @@ namespace sslServer {
 
         inline int newConnect(_In_ IOContext *ioContext) override;
 
-        void startServer(_In_ int maxWaitList,
-                         _In_ std::map<UINT, UINT32> *mapPortPID) override;
+
 
         int commitData(_In_ const std::string &originData,
                        _In_ const UINT32 &pid,
