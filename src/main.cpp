@@ -15,7 +15,8 @@ using Poco::UUIDGenerator;
 
 //#define PROXY_PORT 34010
 #define PROXY_PORT 9999
-//#define SSL_SERVER_PORT 443
+#define SSL_PROXY_PORT 8888
+#define SSL_SERVER_PORT 443
 #define SERVER_PORT 80
 
 
@@ -103,7 +104,10 @@ int main() {
 
 
     UINT16 serverPort = SERVER_PORT, proxyPort = PROXY_PORT, altPort = ALT_PORT;
-    auto dealFunc = [&](PWINDIVERT_IPHDR &ipHeader, PWINDIVERT_TCPHDR &tcpHeader, WINDIVERT_ADDRESS &addr) {
+
+    UINT16 sslServerPort = SSL_SERVER_PORT,sslProxyPort = SSL_PROXY_PORT,sslAltPort = SSL_ALT_PORT;
+    auto dealFunc =
+            [&](PWINDIVERT_IPHDR &ipHeader, PWINDIVERT_TCPHDR &tcpHeader, WINDIVERT_ADDRESS &addr) {
         if (addr.Outbound) // 向外部主机发送的数据包
         {
             if (tcpHeader->DstPort == htons(serverPort)) {
@@ -125,11 +129,48 @@ int main() {
 
                 tcpHeader->DstPort = htons(serverPort);
             }
+
+
+
+
+            if(0)
+            if (tcpHeader->DstPort == htons(sslServerPort)) {
+                // Reflect: PORT ---> PROXY
+
+                tcpHeader->DstPort = htons(sslProxyPort);
+                swap(ipHeader->SrcAddr, ipHeader->DstAddr);
+//                ipHeader->DstAddr = ipHeader->SrcAddr;
+                addr.Outbound = FALSE;
+
+            } else if (tcpHeader->SrcPort == htons(sslProxyPort)) {
+                // Reflect: PROXY ---> PORT
+
+                tcpHeader->SrcPort = htons(sslServerPort);
+                swap(ipHeader->SrcAddr, ipHeader->DstAddr);
+                addr.Outbound = FALSE;
+            } else if (tcpHeader->DstPort == htons(sslAltPort)) {
+                // Redirect: ALT ---> PORT
+
+                tcpHeader->DstPort = htons(sslServerPort);
+            }
+
+
+
+
+
         } else {
             if (tcpHeader->SrcPort == htons(serverPort)) {
                 // Redirect: PORT ---> ALT
 
                 tcpHeader->SrcPort = htons(altPort);
+            }
+
+
+            if(0)
+            if (tcpHeader->SrcPort == htons(sslServerPort)) {
+                // Redirect: PORT ---> ALT
+
+                tcpHeader->SrcPort = htons(sslAltPort);
             }
         }
     };
