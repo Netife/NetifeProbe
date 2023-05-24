@@ -227,114 +227,8 @@ void ProxyServer::eventWorkerThread() {
                          sizeof(ipDotDec));
                 std::wcout << L"new accept event: to " << ipDotDec << std::endl;
 
-
-                WSADATA wsa_data;
-                WORD wsa_version = MAKEWORD(2, 2);
-                if (0 != WSAStartup(wsa_version, &wsa_data)) {
-                    std::cerr << "failed to start new WSA: "
-                              << GetLastError()
-                              << std::endl;
-                    exit(-17);
-                }
-
-
-                sockaddr_in remoteServerAddr{};
-                remoteServerAddr.sin_family = AF_INET;
-                remoteServerAddr.sin_port = htons(ALT_PORT);
-                remoteServerAddr.sin_addr = newAddr.sin_addr;
-
-                // 这里开始 IOCP，创建新的客户端IO文件描述符，alt表示远程服务器
-                ioContext->remoteSocket = WSASocketW(
-                        AF_INET,
-                        SOCK_STREAM,
-                        0,
-                        nullptr,
-                        0,
-                        WSA_FLAG_OVERLAPPED);
-
-
-                if (INVALID_SOCKET == ioContext->remoteSocket) {
-                    closesocket(ioContext->remoteSocket);
-                    cerr << "failed to create socket: " << WSAGetLastError() << endl;
-                    exit(-9);
-                }
-                // Connect!! TODO 有时间可以改成异步 ConnectEx
-
-
-
-
-                setsockopt(ioContext->remoteSocket,
-                           SOL_SOCKET,
-                           SO_UPDATE_CONNECT_CONTEXT,
-                           nullptr,
-                           0);
-
-
-
-                // 和完成端口关联起来
-                if (nullptr == CreateIoCompletionPort(
-                        (HANDLE) ioContext->remoteSocket,
-                        hIOCP,
-                        0,
-                        0)) {
-                    shutdown(ioContext->remoteSocket, SD_BOTH);
-                    closesocket(ioContext->remoteSocket);
-                    closesocket(ioContext->socket);
-                    continue;
-                }
-
-
-                addrinfo hints = {0};
-                hints.ai_family = ioContext->addresses[1].ss_family;
-                hints.ai_protocol = IPPROTO_TCP;
-                hints.ai_socktype = SOCK_STREAM;
-                hints.ai_flags = AI_PASSIVE;
-
-                addrinfo *pAddrInfo = nullptr;
-                if (auto err = getaddrinfo(nullptr,
-                                           "",
-                                           &hints,
-                                           &pAddrInfo)) {
-
-                    fprintf(stderr, "getaddrinfo: %ls\n",
-                            gai_strerror(err));
-                    exit(-1);
-                }
-
-
-                if (SOCKET_ERROR == ::bind(ioContext->remoteSocket,
-                                           pAddrInfo->ai_addr,
-                                           static_cast<int>(pAddrInfo->ai_addrlen))) {
-
-                }
-
-
                 ioContext->addr = newAddr;
-
-
-                ioContext->type = EventIOType::ClientIOConnect;
-
-                // 获取connectEx指针
-                if (nullptr == pfn_ConnectEx) {
-                    DWORD dwRetBytes = 0;
-                    GUID guid = WSAID_CONNECTEX;
-                    WSAIoctl(ioContext->remoteSocket,
-                             SIO_GET_EXTENSION_FUNCTION_POINTER,
-                             (void *) &guid,
-                             sizeof(guid),
-                             (void *) &pfn_ConnectEx,
-                             sizeof(pfn_ConnectEx),
-                             &dwRetBytes,
-                             nullptr,
-                             nullptr);
-                }
-
-
-                (*pfn_ConnectEx)(ioContext->remoteSocket,
-                                 (sockaddr *) &remoteServerAddr,
-                                 sizeof(sockaddr_in), nullptr, 0, nullptr,
-                                 &ioContext->overlapped);
-
+                newConnect(ioContext);
 
                 break;
             }
@@ -652,6 +546,118 @@ int ProxyServer::asySend(_In_ IOContext *ioContext,
         return -1;
     }
 
+
+    return 0;
+}
+
+int ProxyServer::newConnect(_In_ IOContext* ioContext) {
+    WSADATA wsa_data;
+    WORD wsa_version = MAKEWORD(2, 2);
+    if (0 != WSAStartup(wsa_version, &wsa_data)) {
+        std::cerr << "failed to start new WSA: "
+                  << GetLastError()
+                  << std::endl;
+        exit(-17);
+    }
+
+    auto newAddr = ioContext->addr;
+
+    sockaddr_in remoteServerAddr{};
+    remoteServerAddr.sin_family = AF_INET;
+    remoteServerAddr.sin_port = htons(ALT_PORT);
+    remoteServerAddr.sin_addr = newAddr.sin_addr;
+
+    // 这里开始 IOCP，创建新的客户端IO文件描述符，alt表示远程服务器
+    ioContext->remoteSocket = WSASocketW(
+            AF_INET,
+            SOCK_STREAM,
+            0,
+            nullptr,
+            0,
+            WSA_FLAG_OVERLAPPED);
+
+
+    if (INVALID_SOCKET == ioContext->remoteSocket) {
+        closesocket(ioContext->remoteSocket);
+        cerr << "failed to create socket: " << WSAGetLastError() << endl;
+        exit(-9);
+    }
+    // Connect!! TODO 有时间可以改成异步 ConnectEx
+
+
+
+
+    setsockopt(ioContext->remoteSocket,
+               SOL_SOCKET,
+               SO_UPDATE_CONNECT_CONTEXT,
+               nullptr,
+               0);
+
+
+
+    // 和完成端口关联起来
+    if (nullptr == CreateIoCompletionPort(
+            (HANDLE) ioContext->remoteSocket,
+            hIOCP,
+            0,
+            0)) {
+        shutdown(ioContext->remoteSocket, SD_BOTH);
+        closesocket(ioContext->remoteSocket);
+        closesocket(ioContext->socket);
+        assert(0);
+        exit(-70);
+    }
+
+
+    addrinfo hints = {0};
+    hints.ai_family = ioContext->addresses[1].ss_family;
+    hints.ai_protocol = IPPROTO_TCP;
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_flags = AI_PASSIVE;
+
+    addrinfo *pAddrInfo = nullptr;
+    if (auto err = getaddrinfo(nullptr,
+                               "",
+                               &hints,
+                               &pAddrInfo)) {
+
+        fprintf(stderr, "getaddrinfo: %ls\n",
+                gai_strerror(err));
+        exit(-1);
+    }
+
+
+    if (SOCKET_ERROR == ::bind(ioContext->remoteSocket,
+                               pAddrInfo->ai_addr,
+                               static_cast<int>(pAddrInfo->ai_addrlen))) {
+
+    }
+
+
+
+
+    ioContext->type = EventIOType::ClientIOConnect;
+
+    // 获取connectEx指针
+    if (nullptr == pfn_ConnectEx) {
+        DWORD dwRetBytes = 0;
+        GUID guid = WSAID_CONNECTEX;
+        WSAIoctl(ioContext->remoteSocket,
+                 SIO_GET_EXTENSION_FUNCTION_POINTER,
+                 (void *) &guid,
+                 sizeof(guid),
+                 (void *) &pfn_ConnectEx,
+                 sizeof(pfn_ConnectEx),
+                 &dwRetBytes,
+                 nullptr,
+                 nullptr);
+    }
+
+
+    (*pfn_ConnectEx)(ioContext->remoteSocket,
+                     (sockaddr *) &remoteServerAddr,
+                     sizeof(sockaddr_in), nullptr, 0, nullptr,
+                     &ioContext->overlapped);
 
     return 0;
 }

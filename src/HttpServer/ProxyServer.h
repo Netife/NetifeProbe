@@ -120,8 +120,15 @@ public:
 
     /**
      * 创建一个新的异步accept
+     * @return 错误码
      */
     inline int newAccept();
+
+    /**
+     * 创建一个新的异步connect
+     * @return 错误码
+     */
+    inline int newConnect(_In_ IOContext* ioContext);
 
 private:
     /**
