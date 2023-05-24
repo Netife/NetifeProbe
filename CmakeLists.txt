@@ -22,7 +22,7 @@ link_directories(./lib)
 
 add_executable(NetifeProbe src/main.cpp
         src/divert/PacketDivert.h src/divert/PacketDivert.cpp
-        src/localServer/ProxyServer.h src/localServer/ProxyServer.cpp
+        src/HttpServer/ProxyServer.h src/HttpServer/ProxyServer.cpp
         gRpcServices/NetifePostClientImpl.h
         gRpcServices/NetifePostClientImpl.cpp
         gRpcModel/NetifeMessage.pb.h

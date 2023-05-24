@@ -1,4 +1,4 @@
-#include "localServer/ProxyServer.h"
+#include "HttpServer/ProxyServer.h"
 #include "divert/PacketDivert.h"
 
 #include <grpcpp/security/credentials.h>
