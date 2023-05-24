@@ -15,6 +15,7 @@ ProxyServer::ProxyServer(_In_ UINT proxyPort,
         _In_ const UINT32 &,
         _In_ const in_addr &,
         _In_ const bool &,
+        _In_ const bool &,
         _Out_ std::string &)> &func
 ) : commitDataFunc(func) {
 
@@ -410,6 +411,7 @@ int ProxyServer::commitData(_In_ const std::string &originData,
                                 pid,
                                 serverAddr,
                                 isOutBound,
+                                false,
                                 newData);
 
 }

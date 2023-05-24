@@ -28,7 +28,7 @@ add_executable(NetifeProbe src/main.cpp
         gRpcModel/NetifeMessage.pb.h
         gRpcModel/NetifeMessage.grpc.pb.h
         gRpcModel/NetifeMessage.pb.cc
-        gRpcModel/NetifeMessage.grpc.pb.cc)
+        gRpcModel/NetifeMessage.grpc.pb.cc src/ServerInterface.h src/HttpsServer/SSLProxyServer.cpp src/HttpsServer/SSLProxyServer.h)
 
 # gRpc
 target_link_libraries(NetifeProbe PRIVATE

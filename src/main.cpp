@@ -40,7 +40,8 @@ int main() {
             _In_ const std::string &originData,
             _In_ const UINT32 pid,
             _In_ const struct in_addr &serverAddr,
-            _In_ const bool isOutBound,
+            _In_ const bool& isOutBound,
+            _In_ const bool& isSSL,
             _Out_ std::string &newData
     ) ->int{
 
