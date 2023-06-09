@@ -49,7 +49,11 @@ public:
 
     ~PacketDivert();
 
-    void startDivert(const std::function<void(PWINDIVERT_IPHDR &, PWINDIVERT_TCPHDR &, WINDIVERT_ADDRESS &)> &dealFunc);
+    void startDivert(const std::function<void(
+            PWINDIVERT_IPHDR &,
+            PWINDIVERT_TCPHDR &,
+            WINDIVERT_ADDRESS &)> &dealFunc,
+                     INT16);
 
     void startDivert(const std::function<void(WINDIVERT_ADDRESS &)> &dealFunc,
                      std::map<UINT, UINT32> *mapPortPID = nullptr);
