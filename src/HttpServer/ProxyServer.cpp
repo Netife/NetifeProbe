@@ -201,9 +201,9 @@ void ProxyServer::eventWorkerThread() {
 //        ioContext->nBytes += lpNumberOfBytesTransferred;
 
 
-        std::cerr << "lpNumberOfBytesTransferred = "
+/*        std::cerr << "lpNumberOfBytesTransferred = "
                   << lpNumberOfBytesTransferred
-                  << std::endl;
+                  << std::endl;*/
         // 处理对应的事件
 
 
@@ -289,11 +289,9 @@ void ProxyServer::eventWorkerThread() {
                            ioContext->sendToServer);
 
                 // 打印修改后的数据
-/*
-                for (char c: ioContext->sendToServer) {
+/*                for (char c: ioContext->sendToServer) {
                     putchar(c);
-                }
-*/
+                }*/
 
 
                 ioContext->wsaBuf = {
