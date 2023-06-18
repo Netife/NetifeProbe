@@ -16,7 +16,7 @@ namespace sslServer {
 
 
     // 用于重叠IO
-    struct SSLIOContext : IOContext {
+    struct SSLIOContext : public BaseIOContext{
         OVERLAPPED overlapped{};
         CHAR *buffer = nullptr; //[MaxBufferSize];// = new CHAR[MaxBufferSize];  // [MaxBufferSize]{};
         CHAR *remoteBuffer = nullptr;
@@ -49,7 +49,7 @@ namespace sslServer {
     };
 
 
-    class SSLProxyServer : public ServerInterface {
+    class SSLProxyServer :virtual public ServerInterface {
     private:
         LPFN_CONNECTEX pfn_ConnectEx = nullptr;
         SSL_CTX *serverSSLCtx = nullptr;
@@ -104,13 +104,13 @@ namespace sslServer {
         inline static bool checkIfCertFileExists(const std::string &filePath);
 
         int static clientHelloSelectServerCTX(_In_ SSL *ssl,
-                                       _In_ int *ignore,
-                                       _In_ void *arg);
+                                              _In_ int *ignore,
+                                              _In_ void *arg);
 
 
         inline int newAccept() override;
 
-        inline int newConnect(_In_ IOContext *ioContext) override;
+        inline int newConnect(_In_ BaseIOContext* baseIoContext) override;
 
 
 

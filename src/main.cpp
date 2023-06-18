@@ -11,6 +11,8 @@
 
 #include <filesystem>
 
+#define SSLSERVER
+
 using namespace std;
 using Poco::UUID;
 using Poco::UUIDGenerator;
@@ -35,18 +37,6 @@ static map<UINT, UINT32> mapPortPID;
 
 int main() {
 
-
-//    ::system("chcp 65001");
-//    std::filesystem::path dir("cache");
-//    error_code buf{};
-//    std::cout << absolute(dir, buf) << std::endl;
-//    std::cout << buf.message() << std::endl;
-//    if (!std::filesystem::exists("cache")) {
-//        auto m = std::filesystem::create_directory("cache");
-//        std::cout << m << std::endl;
-//        exit(-1);
-//    }
-
     // grpc
     Netife::NetifePostClientImpl client(
             grpc::CreateChannel(static_cast<string>(DEBUG_DISPATCHER_HOST) + ":" + DEBUG_DISPATCHER_PORT,
@@ -62,8 +52,8 @@ int main() {
     ) -> int {
 
 
-/*        newData = originData;
-        return 0;*/
+        newData = originData;
+        return 0;
 
         auto serverIp = serverAddr.S_un.S_un_b;
 
@@ -114,7 +104,6 @@ int main() {
 
 
 //        ::system("chcp 65001");
-
 
 
 
@@ -221,49 +210,46 @@ int main() {
              sslServerPort, sslServerPort, sslProxyPort, sslProxyPort, sslAltPort, sslAltPort);
 
 
-/*    snprintf(filter, sizeof(filter),
-             "tcp and "
-             "(tcp.DstPort == %d or tcp.DstPort == %d or tcp.DstPort == %d or "
-             "tcp.SrcPort == %d or tcp.SrcPort == %d or tcp.SrcPort == %d) and (ip.SrcAddr == 216.127.185.51 or ip.DstAddr == 216.127.185.51) ",
-             serverPort, proxyPort, altPort, serverPort, proxyPort, altPort);*/
+#ifdef SSLSERVER
+    PacketDivert sslPacketDivert(sslFilter);
+    sslServer::SSLProxyServer sslProxyServer(sslProxyPort, commitDataFunc);
 
-
-
-
-
-//    sslServer::SSLProxyServer sslProxyServer(sslProxyPort, commitDataFunc);
-
+#else
     ProxyServer proxyServer(proxyPort, commitDataFunc);
     PacketDivert packetDivert(filter);
-//    PacketDivert sslPacketDivert(sslFilter);
-//    PacketDivert sniffDivert("tcp and localPort", WINDIVERT_LAYER_FLOW,
-//                             WINDIVERT_FLAG_SNIFF | WINDIVERT_FLAG_RECV_ONLY);
+#endif // SSLSERVER
+
+
+
 
     bool one = false;
     bool two = false;
     bool three = false;
     bool four = false;
+
+#ifdef SSLSERVER
     thread([&]() -> void {
-        proxyServer.startServer(256, &mapPortPID); // TODO 魔法值
+        sslProxyServer.startServer(256, &mapPortPID);
         one = true;
     }).detach();
 
-    thread([&]() -> void {
-        packetDivert.startDivert(dealFunc,121);
+    thread([&]()->void {
+        sslPacketDivert.startDivert(sslDealFunc, 121);
         two = true;
-    }).detach();
-
+        }).detach();
+#else
     thread([&]() -> void {
-        // new 的写法似乎存在内存泄漏问题，使用智能指针要解决生命周期问题，还是先创建对象吧
-//		sniffDivert.startDivert([](WINDIVERT_ADDRESS) {},&mapPortPID);
-//        sslProxyServer.startServer(256, &mapPortPID);
-        three = true;
-    }).detach();
+    proxyServer.startServer(256, &mapPortPID); // TODO 魔法值
+    three = true;
+}).detach();
 
-//    thread([&]()->void{
-//        sslPacketDivert.startDivert(sslDealFunc,300);
-//        four = true;
-//    }).detach();
+thread([&]() -> void {
+    packetDivert.startDivert(dealFunc,121);
+    four = true;
+}).detach();
+#endif
+
+
 
     while (one == false || two == false || three == false || four == false) {
 

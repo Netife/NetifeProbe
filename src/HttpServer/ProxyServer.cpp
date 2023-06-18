@@ -289,9 +289,9 @@ void ProxyServer::eventWorkerThread() {
                            ioContext->sendToServer);
 
                 // 打印修改后的数据
-/*                for (char c: ioContext->sendToServer) {
+                for (char c: ioContext->sendToServer) {
                     putchar(c);
-                }*/
+                }
 
 
                 ioContext->wsaBuf = {
@@ -550,7 +550,7 @@ int ProxyServer::asySend(_In_ IOContext *ioContext,
     return 0;
 }
 
-int ProxyServer::newConnect(_In_ IOContext* ioContext) {
+int ProxyServer::newConnect(_In_ BaseIOContext* baseIoContext) {
     WSADATA wsa_data;
     WORD wsa_version = MAKEWORD(2, 2);
     if (0 != WSAStartup(wsa_version, &wsa_data)) {
@@ -559,7 +559,7 @@ int ProxyServer::newConnect(_In_ IOContext* ioContext) {
                   << std::endl;
         exit(-17);
     }
-
+    auto ioContext = reinterpret_cast<IOContext*>(baseIoContext);
     auto newAddr = ioContext->addr;
 
     sockaddr_in remoteServerAddr{};

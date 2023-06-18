@@ -71,9 +71,10 @@ SSLProxyServer::SSLProxyServer(_In_ UINT proxyPort,
 }
 
 int SSLProxyServer::newAccept() {
-
+    puts("aaaaa\n");
     // 这里创建最初的 io上下文
     auto ioContext = new SSLIOContext;
+    std::cout << sizeof(SSLIOContext) << std::endl;
     ioContext->type = EventIOType::ServerIOAccept;
     //提前准备好 clientSocketFD
     ioContext->socket = WSASocket(AF_INET,
@@ -136,9 +137,17 @@ int SSLProxyServer::newAccept() {
     return 0;
 }
 
-int SSLProxyServer::newConnect(_In_ IOContext *ioContext) {
+int SSLProxyServer::newConnect(_In_ BaseIOContext * baseIoContext) {
 
-    auto sslIOContext = reinterpret_cast<SSLIOContext *>(ioContext);
+    auto sslIOContext = reinterpret_cast<SSLIOContext *>(baseIoContext);
+
+    WCHAR ipDotDec[20]{};
+    InetNtop(AF_INET,
+        (void*)&sslIOContext->addr.sin_addr,
+        ipDotDec,
+        sizeof(ipDotDec));
+
+    std::wcout << "connecting: " << ipDotDec << std::endl;
 
     WSADATA wsaData;
     if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
@@ -153,7 +162,7 @@ int SSLProxyServer::newConnect(_In_ IOContext *ioContext) {
 
     sockaddr_in remoteServerAddr{};
     remoteServerAddr.sin_family = AF_INET;
-    remoteServerAddr.sin_port = htons(ALT_PORT);
+    remoteServerAddr.sin_port = htons(SSL_ALT_PORT);
     remoteServerAddr.sin_addr = sslIOContext->addr.sin_addr;
 
 
@@ -334,7 +343,7 @@ int SSLProxyServer::commitData(_In_ const std::string &originData,
 }
 
 void SSLProxyServer::eventWorkerThread() {
-    puts("worker");
+    //puts("worker");
     SSLIOContext *ioContext = nullptr;
     DWORD lpNumberOfBytesTransferred = 0;
     void *lpCompletionKey = nullptr;
@@ -348,6 +357,7 @@ void SSLProxyServer::eventWorkerThread() {
                 INFINITE);
 
         // IO 未完成
+
         if (!bRt) continue;
 
         // 收到 PostQueuedCompletionStatus 发出的退出指令
@@ -360,7 +370,11 @@ void SSLProxyServer::eventWorkerThread() {
                 case EventIOType::ClientIOConnect:
                     //case EventIOType::ServerIOHandshake:
                     //case EventIOType::ClientIOHandshake:
+                    //assert(0);
                     break;
+
+
+
                 default:
                     continue;
             }
@@ -610,9 +624,9 @@ void SSLProxyServer::eventWorkerThread() {
 
 }
 
-int SSLProxyServer::clientHelloSelectServerCTX(SSL *ssl,
-                                               int *ignore,
-                                               void *arg) {
+int SSLProxyServer::clientHelloSelectServerCTX(_In_ SSL *ssl,
+                                               _In_ int *ignore,
+                                               _In_ void *arg) {
     const char *servername;
     const unsigned char *p;
     size_t len, remaining;
@@ -648,7 +662,7 @@ int SSLProxyServer::clientHelloSelectServerCTX(SSL *ssl,
 
     std::string serverHostname;
     if (servername != nullptr) {
-        serverHostname.append(servername);
+        serverHostname.append(servername,remaining);
     }
     if (serverHostname.length() > 0) {
         auto *new_ctx = static_cast<SSL_CTX *>(arg);

@@ -17,6 +17,7 @@
 
 #pragma comment(lib, "WinDivert.lib")
 #pragma comment(lib, "Ws2_32.lib")
+#pragma comment(lib, "mswsock.lib")
 
 #define ALT_PORT 43010
 #define SSL_ALT_PORT 34010
@@ -38,22 +39,9 @@ enum class EventIOType {
 
 
 // 用于重叠IO
-struct IOContext {
-    OVERLAPPED overlapped{};
-    CHAR *buffer = nullptr; //[MaxBufferSize];// = new CHAR[MaxBufferSize];  // [MaxBufferSize]{};
-    WSABUF wsaBuf{MaxBufferSize, buffer}; // 后面赋值，这里只是说明相关性
-    EventIOType type{};
-    SOCKET socket = INVALID_SOCKET;
-    DWORD nBytes = 0;
-    sockaddr_in addr{}; // 保存拆解好的地址
-    sockaddr_storage addresses[2]{}; // 保存本地地址和远程地址，第二个是 remote
-    SOCKET remoteSocket = INVALID_SOCKET; // 过渡使用的，传递最开始的 accept 后的socket
-    std::string sendToClient; // 要回复给客户端的数据
-    std::string sendToServer; // 要发给远程服务器的数据
-    UINT16 seq = 1; // seq:6 = 1;
-    // 一个tcp数据包理论最大值是 65535，1024 * 60，2 的 6 次方是64，刚好可以容纳
-    // TODO 后续有时间将 C++ 版本提升至20 并使用使用位域重构
-};
+
+struct BaseIOContext {};
+
 
 class ServerInterface {
 public:
@@ -63,7 +51,7 @@ public:
 private:
     virtual inline int newAccept() = 0;
 
-    virtual inline int newConnect(_In_ IOContext* ioContext) = 0;
+    virtual inline int newConnect(_In_ BaseIOContext* baseIoContext) = 0;
 
 
 
