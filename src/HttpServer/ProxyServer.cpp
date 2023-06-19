@@ -240,6 +240,7 @@ void ProxyServer::eventWorkerThread() {
                 // 这里执行第一次异步接收，之后的请求处理也交给工作线程来完成
                 // 复用上一个 IOContext 对象，并且修改类型
 
+                // 读客户端
                 ioContext->buffer = new CHAR[MaxBufferSize]{};
                 ioContext->wsaBuf = {
                         MaxBufferSize,
@@ -251,6 +252,7 @@ void ProxyServer::eventWorkerThread() {
                            EventIOType::ServerIORead);
 
 
+                // 读服务器
                 auto newIOContext = new IOContext;
                 newIOContext->remoteSocket = ioContext->remoteSocket;
                 newIOContext->socket = ioContext->socket;
@@ -269,16 +271,19 @@ void ProxyServer::eventWorkerThread() {
             }
 
             case EventIOType::ServerIORead: {
-
+                if (1 == readUntilNoData(ioContext, lpNumberOfBytesTransferred)) {
+                    continue;
+                }
 
                 // 到这里说明成功把所有请求读取完毕
 
                 std::string originDataFromClient(
                         ioContext->buffer,
-                        lpNumberOfBytesTransferred);
+                        ioContext->nBytes);
 
                 delete[] ioContext->buffer;
                 ioContext->buffer = nullptr;
+                ioContext->nBytes = 0;
 
 
                 ioContext->sendToServer.clear();
@@ -312,12 +317,17 @@ void ProxyServer::eventWorkerThread() {
             }
 
             case EventIOType::ClientIORead: {
+                if (1 == readUntilNoData(ioContext, lpNumberOfBytesTransferred)) {
+                    continue;
+                }
+
                 std::string originDataFromRemote(ioContext->buffer,
-                                                 lpNumberOfBytesTransferred);
+                                                 ioContext->nBytes);
 
 
                 delete[] ioContext->buffer;
                 ioContext->buffer = nullptr;
+                ioContext->nBytes = 0;
 
 
                 ioContext->sendToClient.clear();
@@ -660,4 +670,55 @@ int ProxyServer::newConnect(_In_ BaseIOContext* baseIoContext) {
                      &ioContext->overlapped);
 
     return 0;
+}
+
+int ProxyServer::readUntilNoData(_In_ BaseIOContext *baseIoContext,
+                                 _In_ DWORD lpNumberOfBytesTransferred) {
+
+    auto ioContext = reinterpret_cast<IOContext*>(baseIoContext);
+
+    const SOCKET* curSocket = nullptr;
+    switch (ioContext->type) {
+        case EventIOType::ServerIORead:{
+            curSocket = &ioContext->socket;
+            break;
+        }
+        case EventIOType::ClientIORead:{
+            curSocket = &ioContext->remoteSocket;
+            break;
+        }
+
+        default:{
+            assert(0);
+            return -1;
+            break;
+        }
+    }
+
+
+    ioContext->nBytes += lpNumberOfBytesTransferred;
+    if (MaxBufferSize > lpNumberOfBytesTransferred) return 0;
+
+    if (MaxBufferSize == lpNumberOfBytesTransferred) {
+        auto newBuf = new CHAR[MaxBufferSize * ((ioContext->seq) + 1)]{};
+        memmove(newBuf,
+                ioContext->buffer,
+                MaxBufferSize * (ioContext->seq));
+        delete[] ioContext->buffer;
+        ioContext->buffer = newBuf;
+        ioContext->wsaBuf = {
+                static_cast<ULONG>(MaxBufferSize),
+                ioContext->buffer + MaxBufferSize * (ioContext->seq)
+        };
+        ++ioContext->seq;
+
+        asyReceive(ioContext,
+                   *curSocket,
+                   ioContext->type);
+        return 1;
+
+    }
+    assert(0);
+    return -1;
+
 }
