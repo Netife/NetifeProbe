@@ -109,6 +109,10 @@ private:
      */
     inline int newConnect(_In_ BaseIOContext* baseIoContext) override;
 
+
+    inline int readUntilNoData(_In_ BaseIOContext* baseIoContext,
+                               _In_ DWORD lpNumberOfBytesTransferred);
+
 private:
     /**
      * 提交数据给其他模块

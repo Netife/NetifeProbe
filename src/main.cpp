@@ -11,7 +11,7 @@
 
 #include <filesystem>
 
-#define SSLSERVER
+//#define SSLSERVER
 
 using namespace std;
 using Poco::UUID;
@@ -52,8 +52,8 @@ int main() {
     ) -> int {
 
 
-        newData = originData;
-        return 0;
+//        newData = originData;
+//        return 0;
 
         auto serverIp = serverAddr.S_un.S_un_b;
 
