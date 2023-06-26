@@ -23,7 +23,7 @@
 #define SSL_ALT_PORT 34010
 
 constexpr static size_t MaxBufferSize = 1024 * 4; // 1024 * 1; // 最大缓冲区尺寸
-constexpr static size_t NumberOfThreads = 100; // 线程池线程数量
+constexpr static size_t NumberOfThreads = 1; // 线程池线程数量
 
 
 
