@@ -284,6 +284,7 @@ void ProxyServer::eventWorkerThread() {
                 delete[] ioContext->buffer;
                 ioContext->buffer = nullptr;
                 ioContext->nBytes = 0;
+                ioContext->seq = 1;
 
 
                 ioContext->sendToServer.clear();
@@ -328,6 +329,7 @@ void ProxyServer::eventWorkerThread() {
                 delete[] ioContext->buffer;
                 ioContext->buffer = nullptr;
                 ioContext->nBytes = 0;
+                ioContext->seq = 1;
 
 
                 ioContext->sendToClient.clear();
@@ -695,7 +697,7 @@ int ProxyServer::readUntilNoData(_In_ BaseIOContext *baseIoContext,
         }
     }
 
-
+    
     ioContext->nBytes += lpNumberOfBytesTransferred;
     if (MaxBufferSize > lpNumberOfBytesTransferred) return 0;
 
