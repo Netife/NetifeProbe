@@ -71,10 +71,10 @@ SSLProxyServer::SSLProxyServer(_In_ UINT proxyPort,
 }
 
 int SSLProxyServer::newAccept() {
-    puts("aaaaa\n");
+    //puts("aaaaa\n");
     // 这里创建最初的 io上下文
     auto ioContext = new SSLIOContext;
-    std::cout << sizeof(SSLIOContext) << std::endl;
+    //std::cout << sizeof(SSLIOContext) << std::endl;
     ioContext->type = EventIOType::ServerIOAccept;
     //提前准备好 clientSocketFD
     ioContext->socket = WSASocket(AF_INET,
@@ -126,11 +126,13 @@ int SSLProxyServer::newAccept() {
     // 套壳ssl
     ioContext->clientSSL = SSL_new(serverSSLCtx);
     assert(!SSL_is_init_finished(ioContext->clientSSL));
-    ioContext->rbio = BIO_new(BIO_s_mem());
-    ioContext->wbio = BIO_new(BIO_s_mem()); // 理论上无限大，且动态增长
-    SSL_set_bio(ioContext->clientSSL,
-                ioContext->rbio,
-                ioContext->wbio); // 这个表示，把ssl读写的缓冲区和我们做的bio缓冲区相关联
+
+    SSL_set_fd(ioContext->clientSSL, ioContext->socket);
+    //ioContext->rbio = BIO_new(BIO_s_mem());
+    //ioContext->wbio = BIO_new(BIO_s_mem()); // 理论上无限大，且动态增长
+    //SSL_set_bio(ioContext->clientSSL,
+    //            ioContext->rbio,
+    //            ioContext->wbio); // 这个表示，把ssl读写的缓冲区和我们做的bio缓冲区相关联
     SSL_set_accept_state(ioContext->clientSSL);
 
 
@@ -259,13 +261,16 @@ int SSLProxyServer::newConnect(_In_ BaseIOContext * baseIoContext) {
 
 
     assert(!SSL_is_init_finished(sslIOContext->remoteSSL));
-    sslIOContext->remoteRBio = BIO_new(BIO_s_mem());
-    sslIOContext->remoteWBio = BIO_new(BIO_s_mem());
+    //sslIOContext->remoteRBio = BIO_new(BIO_s_mem());
+    //sslIOContext->remoteWBio = BIO_new(BIO_s_mem());
 
     // 新关联
-    SSL_set_bio(sslIOContext->remoteSSL,
-                sslIOContext->remoteRBio,
-                sslIOContext->remoteWBio);
+    //SSL_set_bio(sslIOContext->remoteSSL,
+                //sslIOContext->remoteRBio,
+                //sslIOContext->remoteWBio);
+
+
+    SSL_set_fd(sslIOContext->remoteSSL, sslIOContext->remoteSocket);
     SSL_set_connect_state(sslIOContext->remoteSSL);
 
 
@@ -288,7 +293,7 @@ void SSLProxyServer::startServer(_In_ int maxWaitList,
     hIOCP = CreateIoCompletionPort(INVALID_HANDLE_VALUE,
                                    nullptr,
                                    0,
-                                   NumberOfThreads);
+                                   MaxNumberOfThreads);
     if (INVALID_HANDLE_VALUE == hIOCP) {
         std::cerr << "FAILED TO CREATE IOCP HANDLE:" << WSAGetLastError() << std::endl;
         closesocket(serverSocketFD);
@@ -309,7 +314,7 @@ void SSLProxyServer::startServer(_In_ int maxWaitList,
 
 
     // 初始化工作线程
-    for (size_t i = 0; i < NumberOfThreads; i++) {
+    for (size_t i = 0; i < MaxNumberOfThreads; i++) {
         threadGroup.emplace_back([this]() { eventWorkerThread(); });
     }
 
@@ -389,6 +394,10 @@ void SSLProxyServer::eventWorkerThread() {
 
         switch (ioContext->type) {
             case EventIOType::ServerIOAccept: {
+
+                auto r = SSL_do_handshake(ioContext->clientSSL);
+                int err = SSL_get_error(ioContext->clientSSL, r);
+
                 puts("accept!\n");
                 newAccept();
                 auto newAddr =
@@ -408,6 +417,221 @@ void SSLProxyServer::eventWorkerThread() {
             }
             case EventIOType::ClientIOConnect: {
                 puts("connect finished...\n");
+
+                auto r2 = SSL_do_handshake(ioContext->remoteSSL);
+                int err2 = SSL_get_error(ioContext->remoteSSL, r2);
+
+
+    
+
+                std::thread([=] {
+                    while (1) {
+                        char buf[MaxBufferSize]{};
+                        std::string res;
+                        while (true) {
+                            auto rt = SSL_read(ioContext->clientSSL, buf, sizeof(buf));
+                            if (rt <= 0)return;
+                            res.append(buf, rt);
+                            if (rt < MaxBufferSize)break;
+                        }
+
+
+                        
+                        auto t1 = SSL_write(ioContext->remoteSSL, res.c_str(), res.length());
+
+                        std::cout << res << std::endl;
+                    }
+                    }).detach();
+
+                    std::thread([=] {
+                        while (1) {
+                            char buf[MaxBufferSize]{};
+                            std::string res;
+                            while (true) {
+                                auto rt = SSL_read(ioContext->remoteSSL, buf, sizeof(buf));
+                                if (rt <= 0)return;
+                                res.append(buf, rt);
+                                if (rt < MaxBufferSize)break;
+
+                            }
+                            auto t1 = SSL_write(ioContext->clientSSL, res.c_str(), res.length());
+                            std::cout << res << std::endl;
+                        }
+                        
+                        }).detach();
+
+
+
+
+
+                break;
+
+
+
+
+
+
+
+                while (true) {
+                    if (!SSL_is_init_finished(ioContext->remoteSSL)) {
+                        SSL_do_handshake(ioContext->remoteSSL);
+                       
+                    }
+                    else {
+                        break;
+                    }
+                    auto pendingDataLen = BIO_ctrl_pending(ioContext->remoteWBio);
+                    char* buf2 = new char[pendingDataLen] {};
+                    auto readBioLen = BIO_read(ioContext->remoteWBio, buf2, pendingDataLen);
+                    auto sendRes = send(ioContext->remoteSocket, buf2, readBioLen, 0);
+
+                    char buf3[MaxBufferSize]{};
+                    std::string res;
+                    while (true) {
+                        auto temp = recv(ioContext->remoteSocket, buf3, MaxBufferSize, 0);
+                        if (temp < 0)break;
+                        res.append(buf3, temp);
+                        if (temp < MaxBufferSize)break;
+                    }
+
+
+                    auto biowrite = BIO_write(ioContext->remoteRBio, res.c_str(), res.length());
+
+
+
+                }
+
+ 
+
+
+                std::thread([ioContext, this] {
+                    while (1) {
+                        while (true) {
+                                     char buf[MaxBufferSize] = {0};
+                            std::string rec;
+                            while (true) {
+                                int recvLen = recv(ioContext->socket, buf, MaxBufferSize, 0); // 数据读到缓冲区
+                                /*assert(recvLen != -1);*/
+                                if (recvLen == -1||recvLen == 0) {
+                                    shutdown(ioContext->remoteSocket, SD_BOTH);
+                                    shutdown(ioContext->socket, SD_BOTH);
+                                    return;
+                                }
+                                rec.append(buf, recvLen);
+                                if (recvLen < MaxBufferSize)break;
+                            }
+                            auto rbLen = BIO_write(ioContext->rbio,
+                                                   rec.c_str(),
+                                                   rec.length()); // 放到BIO里面
+                            ioContext->sendToServerRaw.clear();
+                            char rawText[MaxBufferSize] = {0}; // 存放解密后的数据
+                            while (true) {
+                                int bytes = SSL_read(ioContext->clientSSL, rawText, sizeof(rawText)); // 从bio读出解密后的数据
+                                //printf("info: \"%s\"\n", buf); // 第一次是乱码，在握手
+                                if (bytes > 0) {
+                                    ioContext->sendToServerRaw.append(rawText, bytes);
+                                } else {
+                                    break;
+                                }
+                            }
+                            if (ioContext->sendToServerRaw.length() > 0) {
+                                printf("Client msg: \"%s\"\n",
+                                       ioContext->sendToServerRaw.c_str()); // 第一次是乱码，在握手
+                                break;
+                                //SSL_write(ioContext->clientSSL, "hello!", 7); // 这个时候才读出来
+                            }
+
+                            if (!SSL_is_init_finished(ioContext->clientSSL)) // 猜测正确！！
+                                SSL_do_handshake(ioContext->clientSSL); // 握手！
+                            auto pendingDataLen = BIO_ctrl_pending(ioContext->wbio);
+                            char *buf2 = new char[pendingDataLen]{};
+                            auto writtenLen = BIO_read(ioContext->wbio, buf2, pendingDataLen);
+                            send(ioContext->socket, buf2, writtenLen, 0); // 握手信息发给客户端
+
+                        }
+
+
+                        std::thread([ioContext, this] {
+							//assert(SSL_is_init_finished(ioContext->remoteSSL));
+							auto m = SSL_write(ioContext->remoteSSL,
+								ioContext->sendToServerRaw.c_str(),
+								ioContext->sendToServerRaw.length());
+                        std::cout << "M= " << m << std::endl;
+
+							auto pendingDataLen = BIO_ctrl_pending(ioContext->remoteWBio);
+							char* buf2 = new char[pendingDataLen] {};
+							auto readBioLen = BIO_read(ioContext->remoteWBio, buf2, pendingDataLen);
+							auto rt = send(ioContext->remoteSocket, buf2, readBioLen, 0);
+
+                            }).detach();
+
+
+                            std::thread([ioContext, this] {
+
+                                while (true) {
+                                    char buf3[MaxBufferSize]{};
+                                    std::string res;
+                                    while (true) {
+                                        auto temp = recv(ioContext->remoteSocket, buf3, MaxBufferSize, 0);
+                                        if (temp < 0)break;
+                                        res.append(buf3, temp);
+                                        if (temp < MaxBufferSize)break;
+
+                                    }
+
+
+                                    auto biowrite = BIO_write(ioContext->remoteRBio, res.c_str(), res.length());
+
+                                    char buf4[MaxBufferSize]{};
+
+                                    while (true) {
+                                        auto n = SSL_read(ioContext->remoteSSL, buf4, MaxBufferSize);
+                                        if (n == -1 || n == 0) {
+
+                                            if (ioContext->sendToClientRaw.length() > 0)
+                                            {
+                                                SSL_write(ioContext->clientSSL, ioContext->sendToClientRaw.c_str(), ioContext->sendToClientRaw.length());
+                                                auto pendingDataLen = BIO_ctrl_pending(ioContext->wbio);
+                                                char* buf4 = new char[pendingDataLen] {};
+                                                auto readBioLen2 = BIO_read(ioContext->wbio, buf4, pendingDataLen);
+                                                auto rt2 = send(ioContext->socket, buf4, readBioLen2, 0);
+                                                ioContext->sendToClientRaw.clear();
+
+                                            }
+
+                                            break;
+                                        }
+                                        else {
+                                            printf("%s", buf4);
+                                            ioContext->sendToClientRaw.append(buf4, n);
+
+                                            memset(buf4, 0, sizeof(buf4));
+                                        }
+
+
+                                    }
+                                }
+                                }).detach();
+
+                        
+
+
+                 
+
+
+
+                    }
+                    
+                    
+                    
+                }).detach();
+
+        
+                
+                
+                
+                break;
+
 
 
                 std::thread([ioContext, this]() {
@@ -475,6 +699,7 @@ void SSLProxyServer::eventWorkerThread() {
 
                                 if (bytes > 0) {
                                     sentOrNot = true;
+                                    ioContext->sendToServerRaw.clear();
                                 }
                             }
                             //if (bytes > 0) {
@@ -489,6 +714,9 @@ void SSLProxyServer::eventWorkerThread() {
                                 if (temp == -1) {
                                     shutdown(ioContext->remoteSocket, SD_BOTH);
                                     shutdown(ioContext->socket, SD_BOTH);
+                                    return;
+                                }
+                                if (temp == 0) {
                                     return;
                                 }
                                 assert(temp != -1);
@@ -513,7 +741,8 @@ void SSLProxyServer::eventWorkerThread() {
                                     ioContext->sendToClientRaw.append(buf4, n);
                                     memset(buf4, 0, sizeof(buf4));
                                     recvData = true;
-
+                                    auto pendingDataLen = BIO_ctrl_pending(ioContext->remoteWBio);
+                                    std::cerr << pendingDataLen << std::endl;
                                     
                                 }
                             }
@@ -574,105 +803,34 @@ void SSLProxyServer::eventWorkerThread() {
                 }).detach();
 
 
-                //std::thread([ioContext, this]() {
-
-                //    while (1) {
-
-                //        while (true) {
-                //            char buf[MaxBufferSize] = {0};
-                //            std::string rec;
-                //            // recv
-                //            while (true) {
-                //                int recvLen = recv(ioContext->remoteSocket, buf, MaxBufferSize, 0); // 数据读到缓冲区
-                //                if (recvLen == -1) {
-                //                    shutdown(ioContext->remoteSocket, SD_BOTH);
-                //                    shutdown(ioContext->socket, SD_BOTH);
-                //                    return;
-                //                }
-                //                assert(recvLen != -1);
-                //                rec.append(buf, recvLen);
-                //                if (recvLen < MaxBufferSize)break;
-                //            }
-
-                //            // BIO-write
-                //            mtx.lock();
-                //            auto rbLen = BIO_write(ioContext->remoteRBio,
-                //                                   rec.c_str(),
-                //                                   rec.length()); // 放到BIO里面
-                //            mtx.unlock();
-                //            char rawText[MaxBufferSize] = {0}; // 存放解密后的数据
-
-                //            ioContext->sendToClientRaw.clear();
-
-                //            // SSL_read
-                //            while (true) {
-                //                mtx.lock();
-                //                int bytes = SSL_read(ioContext->remoteSSL,
-                //                                     rawText,
-                //                                     sizeof(rawText)); // 从bio读出解密后的数据
-                //                mtx.unlock();
-                //                if (bytes == -1)break;
-                //                if (bytes == 0) {
-                //                    shutdown(ioContext->remoteSocket, SD_BOTH);
-                //                    shutdown(ioContext->socket, SD_BOTH);
-                //                    return;
-                //                }
-                //                assert(bytes != 0);
-                //                if (bytes > 0) {
-                //                    ioContext->sendToClientRaw.append(rawText, bytes);
-                //                }
-
-                //            }
-
-                //            if (ioContext->sendToClientRaw.length() > 0) {
-                //                for (auto c: ioContext->sendToClientRaw) {
-                //                    putchar(c);
-                //                }
-                //                break;
-                //            }
-
-
-                //            // BIO_read & send
-                //            if (!SSL_is_init_finished(ioContext->remoteSSL))
-                //                SSL_do_handshake(ioContext->remoteSSL);
-                //            auto pendingDataLen = BIO_ctrl_pending(ioContext->remoteWBio);
-                //            char *buf2 = new char[pendingDataLen]{};
-                //            auto writtenLen = BIO_read(ioContext->remoteWBio, buf2, pendingDataLen);
-                //            send(ioContext->remoteSocket, buf2, writtenLen, 0);
-                //        }
-
-
-                //        while (true) {
-
-
-                //            auto bytes = SSL_write(ioContext->clientSSL,
-                //                                   ioContext->sendToClientRaw.c_str(),
-                //                                   ioContext->sendToClientRaw.length());
-                //            if (!SSL_is_init_finished(ioContext->clientSSL)) {
-                //                SSL_do_handshake(ioContext->clientSSL);
-                //            }
-                //            auto pendingDataLen = BIO_ctrl_pending(ioContext->wbio);
-                //            char *buf2 = new char[pendingDataLen]{};
-                //            auto readBioLen = BIO_read(ioContext->wbio, buf2, pendingDataLen);
-
-                //            send(ioContext->socket, buf2, readBioLen, 0);
-                //            if (bytes > 0) {
-                //                ioContext->sendToClientRaw.clear();
-                //                break;
-                //            } else
-                //                assert(0);
-
-                //        }
-
-                //    }
-
-
-                //}).detach();
+              
 
 
                 break;
             }
 
+            case EventIOType::ServerIORead: {
+                std::cerr << lpNumberOfBytesTransferred;
+
+
+                    auto r = SSL_do_handshake(ioContext->clientSSL);
+
+                    if (r == 1) {
+                        char buf[MaxBufferSize]{};
+                        auto m = SSL_read(ioContext->clientSSL, buf, sizeof(buf));
+                        std::cout << m << std::endl;
+
+                    }
+                    else {
+
+
+                    }
+
+                
+
+
+                break;
+            }
             default:
                 break;
         }

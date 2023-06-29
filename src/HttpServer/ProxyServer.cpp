@@ -1,5 +1,6 @@
 #include "ProxyServer.h"
 #include <cassert>
+#include <Windows.h>
 
 
 using namespace std;
@@ -18,6 +19,17 @@ ProxyServer::ProxyServer(_In_ UINT proxyPort,
         _In_ const bool &,
         _Out_ std::string &)> &func
 ) : commitDataFunc(func) {
+
+
+    // 确定最佳工作线程数
+    SYSTEM_INFO sysInfo = { 0 };
+    GetNativeSystemInfo(&sysInfo);
+    this->numOfWorkerThreads = min(
+        MaxNumberOfThreads, sysInfo.
+        dwNumberOfProcessors * 2);
+
+
+
 
     // 初始化 Windows server api
     WSADATA wsaData;
@@ -86,7 +98,8 @@ ProxyServer::~ProxyServer() {
 
     // 有多少个线程就发送 post 多少次，让工作线程收到事件并主动退出
     void *lpCompletionKey = nullptr;
-    for (size_t i = 0; i < NumberOfThreads; i++) {
+
+    for (size_t i = 0; i < numOfWorkerThreads; i++) {
         PostQueuedCompletionStatus(hIOCP,
                                    -1,
                                    (ULONG_PTR) lpCompletionKey,
@@ -142,7 +155,7 @@ void ProxyServer::startServer(_In_ int maxWaitList,
 
 
     // 初始化工作线程
-    for (size_t i = 0; i < NumberOfThreads; i++) {
+    for (size_t i = 0; i < numOfWorkerThreads; i++) {
         threadGroup.emplace_back([this]() { eventWorkerThread(); });
     }
 
@@ -261,6 +274,7 @@ void ProxyServer::eventWorkerThread() {
                         MaxBufferSize,
                         newIOContext->buffer
                 };
+                newIOContext->addr = ioContext->addr;
 
                 asyReceive(newIOContext,
                            newIOContext->remoteSocket,
@@ -368,6 +382,8 @@ void ProxyServer::eventWorkerThread() {
                 break;
             }
             case EventIOType::ServerIOWrite: {
+                ioContext->sendToClient.clear();
+
                 ioContext->buffer = new CHAR[MaxBufferSize]{};
                 ioContext->wsaBuf = {
                         MaxBufferSize,
@@ -384,6 +400,8 @@ void ProxyServer::eventWorkerThread() {
 
                 /*这个注释里面不要嵌套双斜杠！*/
                 // shutdown(ioContext->socket,SD_SEND); // 终止发送
+
+                ioContext->sendToServer.clear();
 
                 ioContext->buffer = new CHAR[MaxBufferSize]{};
                 ioContext->wsaBuf = {
@@ -514,6 +532,7 @@ int ProxyServer::asyReceive(_In_ IOContext *ioContext,
 
         delete ioContext;
         ioContext = nullptr;
+        assert(0);
         return -1;
     }
 
@@ -555,6 +574,7 @@ int ProxyServer::asySend(_In_ IOContext *ioContext,
         // 缓冲区由string管理
         delete ioContext;
         ioContext = nullptr;
+        assert(0);
         return -1;
     }
 
@@ -563,14 +583,16 @@ int ProxyServer::asySend(_In_ IOContext *ioContext,
 }
 
 int ProxyServer::newConnect(_In_ BaseIOContext* baseIoContext) {
-    WSADATA wsa_data;
-    WORD wsa_version = MAKEWORD(2, 2);
-    if (0 != WSAStartup(wsa_version, &wsa_data)) {
-        std::cerr << "failed to start new WSA: "
-                  << GetLastError()
-                  << std::endl;
-        exit(-17);
-    }
+    //WSADATA wsa_data;
+    //WORD wsa_version = MAKEWORD(2, 2);
+    //if (0 != WSAStartup(wsa_version, &wsa_data)) {
+    //    std::cerr << "failed to start new WSA: "
+    //              << GetLastError()
+    //              << std::endl;
+    //    exit(-17);
+    //}
+
+
     auto ioContext = reinterpret_cast<IOContext*>(baseIoContext);
     auto newAddr = ioContext->addr;
 
@@ -642,6 +664,7 @@ int ProxyServer::newConnect(_In_ BaseIOContext* baseIoContext) {
     if (SOCKET_ERROR == ::bind(ioContext->remoteSocket,
                                pAddrInfo->ai_addr,
                                static_cast<int>(pAddrInfo->ai_addrlen))) {
+        assert(0);
 
     }
 
@@ -712,7 +735,7 @@ int ProxyServer::readUntilNoData(_In_ BaseIOContext *baseIoContext,
                 static_cast<ULONG>(MaxBufferSize),
                 ioContext->buffer + MaxBufferSize * (ioContext->seq)
         };
-        ++ioContext->seq;
+        ++(ioContext->seq);
 
         asyReceive(ioContext,
                    *curSocket,
