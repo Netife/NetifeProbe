@@ -18,6 +18,7 @@ SSLProxyServer::SSLProxyServer(_In_ UINT proxyPort,
         _Out_ std::string &)> &func
 ) : commitDataFunc(func) {
 
+    // init
     WORD ver = MAKEWORD(2, 2);
     WSADATA wd;
     if (WSAStartup(ver, &wd) != 0) {
@@ -30,8 +31,11 @@ SSLProxyServer::SSLProxyServer(_In_ UINT proxyPort,
     SSL_load_error_strings();
     OpenSSL_add_all_algorithms();
 
-    const SSL_METHOD *method = SSLv23_server_method();
-    serverSSLCtx = SSL_CTX_new(method);
+    const SSL_METHOD *serverMethod = SSLv23_server_method();
+    serverSSLCtx = SSL_CTX_new(serverMethod);
+
+    const SSL_METHOD* clientMethod = SSLv23_client_method();
+    clientSSLCtx = SSL_CTX_new(clientMethod);
     //if (SSL_CTX_use_certificate_file(serverSSLCtx, "cache\\www.baidu.com.crt", SSL_FILETYPE_PEM) <= 0) {
     //	ERR_print_errors_fp(stderr);
     //	exit(EXIT_FAILURE);
@@ -151,16 +155,6 @@ int SSLProxyServer::newConnect(_In_ BaseIOContext * baseIoContext) {
 
     std::wcout << "connecting: " << ipDotDec << std::endl;
 
-    WSADATA wsaData;
-    if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
-        puts("remote WSADATA init error!");
-        assert(0);
-    }
-
-    SSL_library_init();
-    SSL_load_error_strings();
-    OpenSSL_add_all_algorithms();
-
 
     sockaddr_in remoteServerAddr{};
     remoteServerAddr.sin_family = AF_INET;
@@ -187,11 +181,11 @@ int SSLProxyServer::newConnect(_In_ BaseIOContext * baseIoContext) {
 
 
 
-    //setsockopt(sslIOContext->remoteSocket,
-    //	SOL_SOCKET,
-    //	SO_UPDATE_CONNECT_CONTEXT,
-    //	nullptr,
-    //	0);
+    setsockopt(sslIOContext->remoteSocket,
+    	SOL_SOCKET,
+    	SO_UPDATE_CONNECT_CONTEXT,
+    	nullptr,
+    	0);
 
 
 
@@ -253,14 +247,12 @@ int SSLProxyServer::newConnect(_In_ BaseIOContext * baseIoContext) {
 
 
 
-    // ssl处理
-    const SSL_METHOD *meth = SSLv23_client_method();
-    //建立新的SSL上下文
-    SSL_CTX *newClientCtx = SSL_CTX_new(meth);
-    sslIOContext->remoteSSL = SSL_new(newClientCtx);
+
+    sslIOContext->remoteSSL = SSL_new(clientSSLCtx);
 
 
     assert(!SSL_is_init_finished(sslIOContext->remoteSSL));
+
     //sslIOContext->remoteRBio = BIO_new(BIO_s_mem());
     //sslIOContext->remoteWBio = BIO_new(BIO_s_mem());
 
@@ -293,7 +285,7 @@ void SSLProxyServer::startServer(_In_ int maxWaitList,
     hIOCP = CreateIoCompletionPort(INVALID_HANDLE_VALUE,
                                    nullptr,
                                    0,
-                                   MaxNumberOfThreads);
+                                   0);
     if (INVALID_HANDLE_VALUE == hIOCP) {
         std::cerr << "FAILED TO CREATE IOCP HANDLE:" << WSAGetLastError() << std::endl;
         closesocket(serverSocketFD);
@@ -325,7 +317,7 @@ void SSLProxyServer::startServer(_In_ int maxWaitList,
     }
 
 
-    for (auto i = 0; i < 1; i++) {
+    for (auto i = 0; i < 15; i++) {
         newAccept();
 
     }
@@ -397,6 +389,7 @@ void SSLProxyServer::eventWorkerThread() {
 
                 auto r = SSL_do_handshake(ioContext->clientSSL);
                 int err = SSL_get_error(ioContext->clientSSL, r);
+                assert(r);
 
                 puts("accept!\n");
                 newAccept();
@@ -420,7 +413,7 @@ void SSLProxyServer::eventWorkerThread() {
 
                 auto r2 = SSL_do_handshake(ioContext->remoteSSL);
                 int err2 = SSL_get_error(ioContext->remoteSSL, r2);
-
+                assert(r2);
 
     
 
@@ -430,16 +423,27 @@ void SSLProxyServer::eventWorkerThread() {
                         std::string res;
                         while (true) {
                             auto rt = SSL_read(ioContext->clientSSL, buf, sizeof(buf));
-                            if (rt <= 0)return;
+                            if (rt < 0) { 
+                                //SSL_shutdown(ioContext->clientSSL);
+                                //SSL_free(ioContext->clientSSL);
+                                //closesocket(ioContext->socket);
+                                return; 
+                            }
                             res.append(buf, rt);
                             if (rt < MaxBufferSize)break;
                         }
 
+                        ioContext->sendToServerRaw.clear();
 
+                        commitData(res, 0, ioContext->addr.sin_addr, true, ioContext->sendToServerRaw);
+                        //std::cout << ioContext->sendToServerRaw << std::endl;
                         
-                        auto t1 = SSL_write(ioContext->remoteSSL, res.c_str(), res.length());
+                        auto t1 = SSL_write(ioContext->remoteSSL,
+                            ioContext->sendToServerRaw.c_str(),
+                            ioContext->sendToServerRaw.length());
 
-                        std::cout << res << std::endl;
+
+                   
                     }
                     }).detach();
 
@@ -449,13 +453,27 @@ void SSLProxyServer::eventWorkerThread() {
                             std::string res;
                             while (true) {
                                 auto rt = SSL_read(ioContext->remoteSSL, buf, sizeof(buf));
-                                if (rt <= 0)return;
+                                if (rt < 0) {
+                                    //SSL_shutdown(ioContext->remoteSSL);
+                                    //SSL_free(ioContext->remoteSSL);
+                                    //closesocket(ioContext->remoteSocket);
+                                    return;
+                                }
                                 res.append(buf, rt);
                                 if (rt < MaxBufferSize)break;
 
                             }
-                            auto t1 = SSL_write(ioContext->clientSSL, res.c_str(), res.length());
-                            std::cout << res << std::endl;
+
+                            ioContext->sendToClientRaw.clear();
+
+                            commitData(res, 0, ioContext->addr.sin_addr, false, ioContext->sendToClientRaw);
+                            //std::cout << ioContext->sendToClientRaw << std::endl;
+
+
+                            auto t1 = SSL_write(ioContext->clientSSL,
+                                ioContext->sendToClientRaw.c_str(),
+                                ioContext->sendToClientRaw.length());
+
                         }
                         
                         }).detach();
