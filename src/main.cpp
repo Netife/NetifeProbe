@@ -11,7 +11,7 @@
 
 #include <filesystem>
 
-//#define SSLSERVER
+#define SSLSERVER
 
 using namespace std;
 using Poco::UUID;

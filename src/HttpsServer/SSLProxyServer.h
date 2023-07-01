@@ -53,6 +53,7 @@ namespace sslServer {
     private:
         LPFN_CONNECTEX pfn_ConnectEx = nullptr;
         SSL_CTX *serverSSLCtx = nullptr;
+        SSL_CTX* clientSSLCtx = nullptr;
 
         std::mutex mtx;
 
