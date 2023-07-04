@@ -71,7 +71,7 @@ int main() {
 
         rawText.assign(originData.c_str(),
                        originData.c_str() + originData.length());
-        netifeProbeRequest.set_raw_text(rawText);
+        netifeProbeRequest.set_raw_text(rawText);/**/
         netifeProbeRequest.set_pid(to_string(pid));
 
         //TODO 支持端口修改
