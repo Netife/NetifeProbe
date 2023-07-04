@@ -22,8 +22,11 @@
 #define ALT_PORT 43010
 #define SSL_ALT_PORT 34010
 
+#define MYPRINT(n) \
+    std::cerr << "Line " << __LINE__ << ": " << #n << " = " << n << std::endl
+
 constexpr static size_t MaxBufferSize = 1024 * 4; // 1024 * 1; // 最大缓冲区尺寸
-constexpr static size_t MaxNumberOfThreads = 16; // 线程池线程数量
+constexpr static size_t MaxNumberOfThreads = 12; // 线程池线程数量
 
 
 
@@ -34,7 +37,9 @@ enum class EventIOType {
     ClientIORead, // 代理服务器作为客户端时的 IO 读
     ClientIOWrite,
     ServerIOAccept, // 代理服务器接收到的连接请求
-    ClientIOConnect
+    ClientIOConnect,
+    ServerIOHandshake, // SSL使用
+    ClientIOHandshake
 };
 
 

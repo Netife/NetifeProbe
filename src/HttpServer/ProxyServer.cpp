@@ -1,10 +1,12 @@
 #include "ProxyServer.h"
 #include <cassert>
 #include <Windows.h>
-
+#include <string>
+#include "../utils/SafeMap.h"
 
 using namespace std;
 
+static OHOS::SafeMap<IOContext**, std::string> uuidMap;
 
 #pragma comment(lib, "WinDivert.lib")
 #pragma comment(lib, "Ws2_32.lib")
@@ -281,6 +283,14 @@ void ProxyServer::eventWorkerThread() {
                            EventIOType::ClientIORead);
 
 
+                ioContext->markStemp[0] = newIOContext->markStemp[0] =
+                    &ioContext;
+
+                ioContext->markStemp[1] = newIOContext->markStemp[1] =
+                    &newIOContext;
+
+
+
                 break;
             }
 
@@ -309,10 +319,17 @@ void ProxyServer::eventWorkerThread() {
                            ioContext->sendToServer);
 
                 // 打印修改后的数据
-                for (char c: ioContext->sendToServer) {
-                    putchar(c);
-                }
+                //for (char c: ioContext->sendToServer) {
+                //    putchar(c);
+                //}
 
+                
+                printf("request len = %llu\n", ioContext->sendToServer.length());
+                int stemp = rand();
+                std::string msg{ "uuid is :" + std::to_string(stemp) };
+                uuidMap.EnsureInsert(ioContext->markStemp[0], msg);
+                std::cerr << ioContext->markStemp[0] << std::endl;
+                std::cerr << msg << std::endl;
 
                 ioContext->wsaBuf = {
                         static_cast<ULONG>(ioContext->sendToServer.length()),
@@ -325,7 +342,7 @@ void ProxyServer::eventWorkerThread() {
                                         EventIOType::ClientIOWrite);
 
 
-                puts("sent ....\n");
+                //puts("sentToRemoteServer ....\n");
 
 
                 break;
@@ -362,6 +379,10 @@ void ProxyServer::eventWorkerThread() {
                 }
 */
 
+                printf("response len = %llu\n", ioContext->sendToClient.length());
+
+                std::cerr << "key " << ioContext->markStemp[0] << std::endl;
+                std::cerr << "value " << uuidMap[ioContext->markStemp[0]] << std::endl;
 
 
 
@@ -378,6 +399,7 @@ void ProxyServer::eventWorkerThread() {
                         ioContext->socket,
                         EventIOType::ServerIOWrite);
 
+                //puts("sentToBrowser ....\n");
 
                 break;
             }
