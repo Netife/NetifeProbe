@@ -9,7 +9,9 @@
 #include <filesystem>
 #include <mutex>
 #include "../ServerInterface.h"
+#include "../utils/ThreadPool.h"
 
+#define FRAMEWORK_ONE
 
 namespace sslServer {
     static std::mutex certMtx;
@@ -50,6 +52,9 @@ namespace sslServer {
         std::mutex* pMtx = nullptr;
         std::condition_variable* pConditionVal = nullptr;
 
+        bool isServerRun = true;
+        bool isClientRun = true;
+
     };
 
 
@@ -58,6 +63,8 @@ namespace sslServer {
         LPFN_CONNECTEX pfn_ConnectEx = nullptr;
         SSL_CTX *serverSSLCtx = nullptr;
         SSL_CTX* clientSSLCtx = nullptr;
+
+        ThreadPool* pWorkPool = nullptr;
 
         std::mutex mtx;
 
