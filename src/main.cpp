@@ -52,8 +52,8 @@ int main() {
     ) -> int {
 
 
-//        newData = originData;
-//        return 0;
+/*        newData = originData;
+        return 0;*/
 
         auto serverIp = serverAddr.S_un.S_un_b;
 
@@ -251,7 +251,7 @@ thread([&]() -> void {
 
 
 
-    while (one == false || two == false || three == false || four == false) {
+    while (!one || !two || !three || !four) {
 
 //		for (auto elem : mapPortPID)
 //		{

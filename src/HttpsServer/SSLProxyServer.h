@@ -32,11 +32,11 @@ namespace sslServer {
         sockaddr_in addr{}; // 保存拆解好的地址
         sockaddr_storage addresses[2]{}; // 保存本地地址和远程地址，第二个是 remote
 
-        BIO *rbio = nullptr;
-        BIO *wbio = nullptr;
+        BIO * internalBio = nullptr;
+        BIO * networkBio = nullptr;
 
-        BIO *remoteRBio = nullptr;
-        BIO *remoteWBio = nullptr;
+        BIO *remoteInternalBio = nullptr;
+        BIO * remoteNetworkBio = nullptr;
         std::string sendToServer;
         std::string sendToServerRaw;
         std::string sendToClient;
@@ -46,6 +46,10 @@ namespace sslServer {
         UINT16 remoteSeq = 1; // seq:6 = 1;
         // 一个tcp数据包理论最大值是 65535，1024 * 60，2 的 6 次方是64，刚好可以容纳
         // TODO 后续有时间将 C++ 版本提升至20 并使用使用位域重构
+
+        std::mutex* pMtx = nullptr;
+        std::condition_variable* pConditionVal = nullptr;
+
     };
 
 
@@ -104,7 +108,7 @@ namespace sslServer {
     private:
         inline static bool checkIfCertFileExists(const std::string &filePath);
 
-        int static clientHelloSelectServerCTX(_In_ SSL *ssl,
+        static int clientHelloSelectServerCTX(_In_ SSL *ssl,
                                               _In_ int *ignore,
                                               _In_ void *arg);
 
