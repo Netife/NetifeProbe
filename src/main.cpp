@@ -251,7 +251,7 @@ thread([&]() -> void {
 
 
 
-    while (one == false || two == false || three == false || four == false) {
+    while (!one || !two || !three || !four) {
 
 //		for (auto elem : mapPortPID)
 //		{
