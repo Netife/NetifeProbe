@@ -23,7 +23,7 @@ static inline std::tuple<bool, int> check_if_fatal_error(_In_ int err) {
 			PER_ERROR(SSL_ERROR_WANT_CONNECT)
 			PER_ERROR(SSL_ERROR_WANT_ACCEPT)
 			PER_ERROR(SSL_ERROR_ZERO_RETURN)
-#undef PERR_ERROR(x)
+#undef PERR_ERROR//(x)
 
 #define PER_FATAL(x) case x: {if constexpr (isDebug) perror("ssl code: "#x"\n"); return {true,x};} 
 			PER_FATAL(SSL_ERROR_SSL)
