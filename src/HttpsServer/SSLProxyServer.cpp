@@ -23,7 +23,7 @@ static inline std::tuple<bool, int> check_if_fatal_error(_In_ int err) {
 			PER_ERROR(SSL_ERROR_WANT_CONNECT)
 			PER_ERROR(SSL_ERROR_WANT_ACCEPT)
 			PER_ERROR(SSL_ERROR_ZERO_RETURN)
-#undef PERR_ERROR//(x)
+#undef PERR_ERROR(x)
 
 #define PER_FATAL(x) case x: {if constexpr (isDebug) perror("ssl code: "#x"\n"); return {true,x};} 
 			PER_FATAL(SSL_ERROR_SSL)
@@ -529,10 +529,13 @@ void SSLProxyServer::eventWorkerThread() {
 					}
 
 					ioContext->sendToServerRaw.clear();
-
+					res = myToHex(res);
+					//assert(res == myToBytes(myToHex(res)));
 					commitData(res, 0, ioContext->addr.sin_addr, true, ioContext->sendToServerRaw);
-					//std::cout << ioContext->sendToServerRaw << std::endl;
+					std::cerr << ioContext->sendToServerRaw << std::endl;
+					//std::cerr << res << std::endl;
 
+					ioContext->sendToServerRaw = myToBytes(ioContext->sendToServerRaw);
 					auto t1 = SSL_write(ioContext->remoteSSL,
 						ioContext->sendToServerRaw.c_str(),
 						ioContext->sendToServerRaw.length());
@@ -542,7 +545,7 @@ void SSLProxyServer::eventWorkerThread() {
 				}
 				});
 
-			pClientWorkPool->submit([ioContext,this] {
+			pClientWorkPool->submit([ioContext, this] {
 				while (ioContext->isClientRun) {
 					char buf[MaxBufferSize]{};
 					std::string res;
@@ -550,8 +553,8 @@ void SSLProxyServer::eventWorkerThread() {
 						auto rt = SSL_read(ioContext->remoteSSL, buf, sizeof(buf));
 						if (rt <= 0) {
 							int err = SSL_get_error(ioContext->remoteSSL, rt);
-							auto [isFatal,errCode] = check_if_fatal_error(err);
-							
+							auto [isFatal, errCode] = check_if_fatal_error(err);
+
 							ioContext->isClientRun = false;
 							return;
 						}
@@ -562,8 +565,11 @@ void SSLProxyServer::eventWorkerThread() {
 
 					ioContext->sendToClientRaw.clear();
 
+					res = myToHex(res);
 					commitData(res, 0, ioContext->addr.sin_addr, false, ioContext->sendToClientRaw);
 					//std::cout << ioContext->sendToClientRaw << std::endl;
+
+					ioContext->sendToClientRaw = myToBytes(ioContext->sendToClientRaw);
 
 
 					auto t1 = SSL_write(ioContext->clientSSL,

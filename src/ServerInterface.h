@@ -28,6 +28,39 @@
 constexpr static size_t MaxBufferSize = 1024 * 4; // 1024 * 1; // 最大缓冲区尺寸
 constexpr static size_t MaxNumberOfThreads = 16; // 线程池线程数量
 
+constexpr static char hexTable[] = {
+    '0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'
+};
+
+std::string static myToHex(const std::string& srcStr) {
+    std::string dstStr{};
+    for (const UINT8& ch : srcStr) {
+        dstStr.push_back(hexTable[ch >> 4]); // highByte
+        dstStr.push_back(hexTable[ch & 0x0F]); // lowBytes
+
+    }
+
+    return dstStr;
+}
+
+std::string static myToBytes(const std::string& srcStr) {
+    auto len = srcStr.length();
+    if (len % 2 != 0) {
+        exit(-100);
+    }
+    std::string dstStr{};
+    for (auto i = 1; i < len; i+=2) {
+        auto highByte = srcStr.at(i - 1);
+        auto lowBytes = srcStr.at(i);
+        dstStr.push_back(
+            ((lowBytes > '9' ? (lowBytes + 9) : lowBytes) & 0x0F) |
+            ((highByte > '9' ? (highByte + 9) : highByte) << 4)
+            );
+    }
+    return dstStr;
+
+}
+
 
 
 // 用于标识IO事件的类型，不与宏定义冲突
