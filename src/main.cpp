@@ -222,43 +222,61 @@ int main() {
 
 
 
-    bool one = false;
-    bool two = false;
-    bool three = false;
-    bool four = false;
 
 #ifdef SSLSERVER
-    thread([&]() -> void {
-        sslProxyServer.startServer(256, &mapPortPID);
-        one = true;
-    }).detach();
 
-    thread([&]()->void {
-        sslPacketDivert.startDivert(sslDealFunc, 121);
-        two = true;
-        }).detach();
+    std::packaged_task<bool()> sslProxyTask(
+            [&]() -> bool {
+                sslProxyServer.startServer(256, &mapPortPID);
+                return true;
+            }
+    );
+    std::packaged_task<bool()> sslDivertTask(
+            [&]()-> bool {
+                sslPacketDivert.startDivert(sslDealFunc, 121);
+                return true;
+            }
+    );
+
+    std::future<bool> proxyResult = sslProxyTask.get_future();
+    std::future<bool> divertResult = sslDivertTask.get_future();
+    std::thread(std::move(sslProxyTask)).detach();
+
+    std::thread(std::move(sslDivertTask)).detach();
+    std::cout << "ssl waiting..." << std::endl;
 #else
-    thread([&]() -> void {
-    proxyServer.startServer(256, &mapPortPID); // TODO 魔法值
-    three = true;
-}).detach();
 
-thread([&]() -> void {
-    packetDivert.startDivert(dealFunc,121);
-    four = true;
-}).detach();
+
+    std::packaged_task<bool()> proxyTask(
+        [&]() -> bool {
+            proxyServer.startServer(256, &mapPortPID); // TODO 魔法值
+            return true;
+        }
+    );
+    std::packaged_task<bool()> divertTask(
+        [&]()-> bool {
+            packetDivert.startDivert(dealFunc, 121);
+            return true;
+        }
+    );
+
+    std::future<bool> proxyResult = proxyTask.get_future();
+    std::future<bool> divertResult = divertTask.get_future();
+    std::thread(std::move(proxyTask)).detach();
+
+    std::thread(std::move(divertTask)).detach();
+    std::cout << "waiting..." << std::endl;
+
+
+
 #endif
 
 
 
-    while (!one || !two || !three || !four) {
+    proxyResult.wait();
+    divertResult.wait();
+    std::cout << "end ..." << std::endl;
 
-//		for (auto elem : mapPortPID)
-//		{
-        //			cout << elem.first << "->"<<elem.second <<endl;
-//		}
-        Sleep(5000);
-    }
 
     return 0;
 }
